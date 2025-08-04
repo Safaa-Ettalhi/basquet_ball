@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Manager</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>🏀 Basketball Manager</h1>
+        <nav>
+            <ul id="loading-navs" class="loading-navs">
+                <li><a href="#dashboard" class="nav-link active">📊 Tableau de bord</a></li>
+                <li><a href="#players" class="nav-link">👥 Joueurs</a></li>
+                <li><a href="#matches" class="nav-link">⚽ Matchs</a></li>
+                <li><a href="#trainings" class="nav-link">🏃 Entraînements</a></li>
+                <li><a href="#statistics" class="nav-link">📈 Statistiques</a></li>
+                <li><a href="#budget" class="nav-link">💰 Budget</a></li>
+                <li><a href="#injuries" class="nav-link">🏥 Blessures</a></li>
+                <li><a href="#strategies" class="nav-link">📋 Stratégies</a></li>
+                <li><a href="#simulator" class="nav-link">🤖 Simulateur</a></li>
+                <li><a href="#performance" class="nav-link">📊 Performance</a></li>
+                <li><a href="#team-management" class="nav-link">👥 Gestion Équipe</a></li>      
+                <li><a href="#new-account" class="nav-link">📊 Nouveau compte</a></li>
+                <li><button class="nav-link logout-btn" onclick="logout()">🚪 Déconnexion</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- dashboard -->
+        <section id="dashboard" class="content-section active">
+            <h2>📊 Tableau de bord</h2>
+            <div class="dashboard-cards">
+                <div class="card">
+                    <h3>Joueurs</h3>
+                    <div class="card-value" id="total-players">0</div>
+                </div>
+                <div class="card">
+                    <h3>Matchs à venir</h3>
+                    <div class="card-value" id="upcoming-matches">0</div>
+                </div>
+                <div class="card">
+                    <h3>Joueurs blessés</h3>
+                    <div class="card-value" id="injured-players">0</div>
+                </div>
+                <div class="card">
+                    <h3>Budget</h3>
+                    <div class="card-value" id="budget-balance">€0</div>
+                </div>
+            </div>
+        </section>
+
+     
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

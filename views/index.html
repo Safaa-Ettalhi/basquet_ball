@@ -52,7 +52,354 @@
             </div>
         </section>
 
-     
+        <!-- joueurs -->
+        <section id="players" class="content-section">
+            <div class="section-header">
+                <h2>👥 Gestion des Joueurs</h2>
+                <div id="player-creation-controls" style="display: none;">
+                    <button class="btn btn-primary" onclick="showAddPlayerModal()">+ Ajouter un joueur</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="players-table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Position</th>
+                            <th>Numéro</th>
+                            <th>Taille</th>
+                            <th>Poids</th>
+                            <th>Salaire</th>
+                            <th>Santé</th>
+                            <th>Rôle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- matchs-->
+        <section id="matches" class="content-section">
+            <div class="section-header">
+                <h2>⚽ Gestion des Matchs</h2>
+                <button class="btn btn-primary" onclick="showAddMatchModal()">+ Programmer un match</button>
+            </div>
+            <div class="table-container">
+                <table id="matches-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Adversaire</th>
+                            <th>Lieu</th>
+                            <th>Type</th>
+                            <th>Score</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- les entraînements -->
+        <section id="trainings" class="content-section">
+            <div class="section-header">
+                <h2>🏃 Gestion des Entraînements</h2>
+                <button class="btn btn-primary" onclick="showAddTrainingModal()">+ Programmer un entraînement</button>
+            </div>
+            <div class="table-container">
+                <table id="trainings-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Durée</th>
+                            <th>Lieu</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+         <!-- stats -->
+        <section id="statistics" class="content-section">
+            <h2>📈 Gestion des Statistiques</h2>
+            
+            <!--  partie d'ajout de statistiques -->
+            <div class="stats-controls">
+                <div class="form-group">
+                    <label for="stats-player-select">Sélectionner un joueur pour ajouter des stats:</label>
+                    <select id="stats-player-select">
+                        <option value="">Choisir un joueur</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="showAddStatsModal()">+ Ajouter des statistiques</button>
+                </div>
+            </div>
+
+            <!-- partie consultation des statistiques -->
+            <div class="stats-display">
+                <div class="form-group">
+                    <label for="player-select">Voir les statistiques d'un joueur:</label>
+                    <select id="player-select" onchange="loadPlayerStats()">
+                        <option value="">Choisir un joueur</option>
+                    </select>
+                </div>
+                <div id="player-stats-display" class="stats-grid">
+                    <!-- affichage -->
+                </div>
+            </div>
+
+            <!-- partie pour  gestion des statistiques -->
+            <div class="stats-management">
+                <div class="section-header">
+                    <h3>📊 Toutes les Statistiques</h3>
+                    <div class="form-group">
+                        <select id="filter-player-select" onchange="filterStatistics()">
+                            <option value="">Tous les joueurs</option>
+                        </select>
+                        <select id="filter-match-select" onchange="filterStatistics()">
+                            <option value="">Tous les matchs</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="statistics-table">
+                        <thead>
+                            <tr>
+                                <th>Joueur</th>
+                                <th>Match</th>
+                                <th>Date</th>
+                                <th>Points</th>
+                                <th>Rebonds</th>
+                                <th>Passes</th>
+                                <th>Minutes</th>
+                                <th>% Tirs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- affichage-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- money -->
+        <section id="budget" class="content-section">
+            <div class="section-header">
+                <h2>💰 Gestion du Budget</h2>
+                <button class="btn btn-primary" onclick="showAddBudgetModal()">+ Ajouter une transaction</button>
+            </div>
+            
+            <div class="budget-summary">
+                <div class="budget-card income">
+                    <h3>Revenus totaux</h3>
+                    <div class="budget-value" id="total-income">€0</div>
+                </div>
+                <div class="budget-card expense">
+                    <h3>Dépenses totales</h3>
+                    <div class="budget-value" id="total-expenses">€0</div>
+                </div>
+                <div class="budget-card balance">
+                    <h3>Solde</h3>
+                    <div class="budget-value" id="budget-total">€0</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="budget-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Catégorie</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Montant</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- blessures -->
+        <section id="injuries" class="content-section">
+            <div class="section-header">
+                <h2>🏥 Gestion des Blessures</h2>
+                <!-- Seuls les coaches peuvent déclarer des blessures -->
+                <div class="form-group" id="injury-declaration-controls" style="display: none;">
+                    <select id="injury-player-select">
+                        <option value="">Sélectionner un joueur</option>
+                    </select>
+                    <button class="btn btn-warning" onclick="declareInjuryFromSelect()">🏥 Déclarer une blessure</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="injuries-table">
+                    <thead>
+                        <tr>
+                            <th>Joueur</th>
+                            <th>Position</th>
+                            <th>Type</th>
+                            <th>Gravité</th>
+                            <th>Date de la blessure</th>
+                            <th>Récupération prévue</th>
+                            <th>Traitement</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Laffichage-->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- stratégies -->
+        <section id="strategies" class="content-section">
+            <div class="section-header">
+                <h2>📋 Gestion des Stratégies</h2>
+                <!-- partie pour coach -->
+                <div class="form-group" id="strategy-declaration-controls" style="display: none;">
+                    <button class="btn btn-primary" onclick="showProposeStrategyModal()">+ Proposer une stratégie</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="strategies-table">
+                    <thead>
+                        <tr>
+                            <th>Match</th>
+                            <th>Stratégie</th>
+                            <th>Proposé par</th>
+                            <th>Statut</th>
+                            <th>Commentaires</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+
+        <!-- Performance -->
+        <section id="performance" class="content-section">
+            <div class="section-header">
+                <h2>📊 Analyse de Performance</h2>
+                <div class="form-group">
+                    <select id="performance-player-select">
+                        <option value="">Sélectionner un joueur</option>
+                    </select>
+                    <button class="btn btn-info" onclick="viewDetailedPerformanceFromSelect()">📊 Analyse détaillée</button>
+                </div>
+            </div>
+            
+            <div id="performance-analysis">
+                <h3>Vue d'ensemble de l'équipe</h3>
+                <div id="team-performance" class="performance-grid">
+                    <!-- affichage -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Nouveau compte  -->
+        <section id="new-account" class="content-section">
+            <div class="section-header">
+                <h2>📊 Création de Nouveau Compte</h2>
+                <button class="btn btn-primary" onclick="showCreateAccountModal()">+ Créer un compte</button>
+            </div>
+            <div class="table-container">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichage des compte -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Gestion d'équipe (Coach) -->
+         <section id="team-management" class="content-section">
+            <div class="section-header">
+                <h2>👥 Gestion d'Équipe</h2>
+                <button class="btn btn-primary" onclick="showAddTeamModal()">+ Ajouter une équipe</button>
+            </div>
+            
+            <div class="table-container">
+                <table id="teams-table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Ville</th>
+                            <th>Nombre de joueurs</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- affichege -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Titre du Modal</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+               
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            setTimeout(() => {
+                if (app && app.currentUser && app.hasPermission("injuries", "create")) {
+                    document.getElementById("injury-declaration-controls").style.display = "block";
+                }
+                if (app && app.currentUser && app.hasPermission("strategies", "create")) {
+                    document.getElementById("strategy-declaration-controls").style.display = "block";
+                }
+                if (app && app.currentUser && app.hasPermission("players", "create")) {
+                    document.getElementById("player-creation-controls").style.display = "block";
+                }
+
+            }, 1000);
+        });
+    </script>
     <script src="../assets/js/app.js"></script>
 </body>
 </html>

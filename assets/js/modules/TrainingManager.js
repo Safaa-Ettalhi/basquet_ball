@@ -12,35 +12,52 @@ export class TrainingManager {
     }
   }
 
-  displayTrainings(trainings) {
-    const tbody = document.querySelector("#trainings-table tbody")
-    tbody.innerHTML = ""
-    trainings.forEach((training) => {
-      const row = document.createElement("tr")
-      const trainingDate = new Date(training.date).toLocaleDateString("fr-FR")
-      let actionButtons = ""
+displayTrainings(trainings) {
+  const tbody = document.querySelector("#trainings-table tbody")
+  tbody.innerHTML = ""
 
-      if (this.app.hasPermission("trainings", "update")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editTraining(${training.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("trainings", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteTraining(${training.id})">Supprimer</button>`
-      }
-      actionButtons += `<button class="btn btn-info" onclick="viewTrainingDetails(${training.id})">Détails</button>`
+  trainings.forEach((training) => {
+    const row = document.createElement("tr")
+    const trainingDate = new Date(training.date).toLocaleDateString("fr-FR")
+    let actionButtons = ""
 
-      row.innerHTML = `
-        <td>${trainingDate}</td>
-        <td>${training.training_type_name}</td>
-        <td>${training.duration_minutes} min</td>
-        <td>${training.location}</td>
-        <td>${training.description}</td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
-      `
-      tbody.appendChild(row)
-    })
-  }
+    if (this.app.hasPermission("trainings", "update")) {
+      actionButtons += `
+        <button class="btn btn-secondary" onclick="editTraining(${training.id})" title="Modifier">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("trainings", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteTraining(${training.id})" title="Supprimer">
+          <i data-lucide="trash-2"></i>
+        </button>`
+    }
+
+    actionButtons += `
+      <button class="btn btn-info" onclick="viewTrainingDetails(${training.id})" title="Détails">
+        <i data-lucide="eye"></i>
+      </button>`
+
+    row.innerHTML = `
+      <td>${trainingDate}</td>
+      <td>${training.training_type_name}</td>
+      <td>${training.duration_minutes} min</td>
+      <td>${training.location}</td>
+      <td>${training.description || ""}</td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+
+    tbody.appendChild(row)
+  })
+
+  // Recharge les icônes Lucide après injection
+  lucide.createIcons()
+}
+
 
   showAddTrainingModal() {
     if (!this.app.hasPermission("trainings", "create")) {

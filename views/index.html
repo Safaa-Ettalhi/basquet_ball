@@ -5,25 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basketball Manager</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
+   
+
     <header>
-        <h1>🏀 Basketball Manager</h1>
+        <h1>Basketball Manager</h1>
         <nav>
-            <ul id="loading-navs" class="loading-navs">
-                <li><a href="#dashboard" class="nav-link active">📊 Tableau de bord</a></li>
-                <li><a href="#players" class="nav-link">👥 Joueurs</a></li>
-                <li><a href="#matches" class="nav-link">⚽ Matchs</a></li>
-                <li><a href="#trainings" class="nav-link">🏃 Entraînements</a></li>
-                <li><a href="#statistics" class="nav-link">📈 Statistiques</a></li>
-                <li><a href="#budget" class="nav-link">💰 Budget</a></li>
-                <li><a href="#injuries" class="nav-link">🏥 Blessures</a></li>
-                <li><a href="#strategies" class="nav-link">📋 Stratégies</a></li>
-                <li><a href="#simulator" class="nav-link">🤖 Simulateur</a></li>
-                <li><a href="#performance" class="nav-link">📊 Performance</a></li>
-                <li><a href="#team-management" class="nav-link">👥 Gestion Équipe</a></li>      
-                <li><a href="#new-account" class="nav-link">📊 Nouveau compte</a></li>
-                <li><button class="nav-link logout-btn" onclick="logout()">🚪 Déconnexion</button></li>
+            <ul>
+                <li><a href="#dashboard" class="nav-link active">
+                    <i data-lucide="bar-chart-3"></i>
+                    Tableau de bord
+                </a></li>
+                <li><a href="#players" class="nav-link">
+                    <i data-lucide="users"></i>
+                    Joueurs
+                </a></li>
+                <li><a href="#matches" class="nav-link">
+                    <i data-lucide="trophy"></i>
+                    Matchs
+                </a></li>
+                <li><a href="#trainings" class="nav-link">
+                    <i data-lucide="activity"></i>
+                    Entraînements
+                </a></li>
+                <li><a href="#statistics" class="nav-link">
+                    <i data-lucide="trending-up"></i>
+                    Statistiques
+                </a></li>
+                <li><a href="#budget" class="nav-link">
+                    <i data-lucide="dollar-sign"></i>
+                    Budget
+                </a></li>
+                <li><a href="#injuries" class="nav-link">
+                    <i data-lucide="heart-pulse"></i>
+                    Blessures
+                </a></li>
+                <li><a href="#strategies" class="nav-link">
+                    <i data-lucide="clipboard-list"></i>
+                    Stratégies
+                </a></li>
+
+                <li><a href="#performance" class="nav-link">
+                    <i data-lucide="target"></i>
+                    Performance
+                </a></li>
+                <li><a href="#team-management" class="nav-link">
+                    <i data-lucide="user-round-cog"></i>
+                    Gestion Équipe
+                </a></li>      
+                <li><a href="#new-account" class="nav-link">
+                    <i data-lucide="user-plus"></i>
+                    Nouveau compte
+                </a></li>
+                <li><button class="nav-link logout-btn" onclick="logout()">
+                    <i data-lucide="log-out"></i>
+                   
+                </button></li>
             </ul>
         </nav>
     </header>
@@ -31,7 +70,12 @@
     <main>
         <!-- dashboard -->
         <section id="dashboard" class="content-section active">
-            <h2>📊 Tableau de bord</h2>
+            <div class="section-header">
+                <h2>
+                    <i data-lucide="bar-chart-3"></i>
+                    Tableau de bord
+                </h2>
+            </div>
             <div class="dashboard-cards">
                 <div class="card">
                     <h3>Joueurs</h3>
@@ -55,9 +99,15 @@
         <!-- joueurs -->
         <section id="players" class="content-section">
             <div class="section-header">
-                <h2>👥 Gestion des Joueurs</h2>
+                <h2>
+                    <i data-lucide="users"></i>
+                    Gestion des Joueurs
+                </h2>
                 <div id="player-creation-controls" style="display: none;">
-                    <button class="btn btn-primary" onclick="showAddPlayerModal()">+ Ajouter un joueur</button>
+                    <button class="btn btn-primary" onclick="showAddPlayerModal()">
+                        <i data-lucide="user-plus"></i>
+                        Ajouter un joueur
+                    </button>
                 </div>
             </div>
             <div class="table-container">
@@ -72,6 +122,7 @@
                             <th>Salaire</th>
                             <th>Santé</th>
                             <th>Rôle</th>
+                            <th>Équipe</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -85,8 +136,14 @@
         <!-- matchs-->
         <section id="matches" class="content-section">
             <div class="section-header">
-                <h2>⚽ Gestion des Matchs</h2>
-                <button class="btn btn-primary" onclick="showAddMatchModal()">+ Programmer un match</button>
+                <h2>
+                    <i data-lucide="trophy"></i>
+                    Gestion des Matchs
+                </h2>
+                <button class="btn btn-primary" onclick="showAddMatchModal()">
+                    <i data-lucide="plus"></i>
+                    Programmer un match
+                </button>
             </div>
             <div class="table-container">
                 <table id="matches-table">
@@ -111,8 +168,14 @@
         <!-- les entraînements -->
         <section id="trainings" class="content-section">
             <div class="section-header">
-                <h2>🏃 Gestion des Entraînements</h2>
-                <button class="btn btn-primary" onclick="showAddTrainingModal()">+ Programmer un entraînement</button>
+                <h2>
+                    <i data-lucide="activity"></i>
+                    Gestion des Entraînements
+                </h2>
+                <button class="btn btn-primary" onclick="showAddTrainingModal()">
+                    <i data-lucide="plus"></i>
+                    Programmer un entraînement
+                </button>
             </div>
             <div class="table-container">
                 <table id="trainings-table">
@@ -133,9 +196,14 @@
             </div>
         </section>
 
-         <!-- stats -->
+        <!-- stats -->
         <section id="statistics" class="content-section">
-            <h2>📈 Gestion des Statistiques</h2>
+            <div class="section-header">
+                <h2>
+                    <i data-lucide="trending-up"></i>
+                    Gestion des Statistiques
+                </h2>
+            </div>
             
             <!--  partie d'ajout de statistiques -->
             <div class="stats-controls">
@@ -144,7 +212,10 @@
                     <select id="stats-player-select">
                         <option value="">Choisir un joueur</option>
                     </select>
-                    <button class="btn btn-primary" onclick="showAddStatsModal()">+ Ajouter des statistiques</button>
+                    <button class="btn btn-primary" onclick="showAddStatsModal()">
+                        <i data-lucide="plus"></i>
+                        Ajouter des statistiques
+                    </button>
                 </div>
             </div>
 
@@ -164,7 +235,10 @@
             <!-- partie pour  gestion des statistiques -->
             <div class="stats-management">
                 <div class="section-header">
-                    <h3>📊 Toutes les Statistiques</h3>
+                    <h3>
+                        <i data-lucide="bar-chart"></i>
+                        Toutes les Statistiques
+                    </h3>
                     <div class="form-group">
                         <select id="filter-player-select" onchange="filterStatistics()">
                             <option value="">Tous les joueurs</option>
@@ -200,8 +274,14 @@
         <!-- money -->
         <section id="budget" class="content-section">
             <div class="section-header">
-                <h2>💰 Gestion du Budget</h2>
-                <button class="btn btn-primary" onclick="showAddBudgetModal()">+ Ajouter une transaction</button>
+                <h2>
+                    <i data-lucide="dollar-sign"></i>
+                    Gestion du Budget
+                </h2>
+                <button class="btn btn-primary" onclick="showAddBudgetModal()">
+                    <i data-lucide="plus"></i>
+                    Ajouter une transaction
+                </button>
             </div>
             
             <div class="budget-summary">
@@ -232,7 +312,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- affichage -->
+                        <!-- affichage  -->
                     </tbody>
                 </table>
             </div>
@@ -241,13 +321,19 @@
         <!-- blessures -->
         <section id="injuries" class="content-section">
             <div class="section-header">
-                <h2>🏥 Gestion des Blessures</h2>
+                <h2>
+                    <i data-lucide="heart-pulse"></i>
+                    Gestion des Blessures
+                </h2>
                 <!-- Seuls les coaches peuvent déclarer des blessures -->
                 <div class="form-group" id="injury-declaration-controls" style="display: none;">
                     <select id="injury-player-select">
                         <option value="">Sélectionner un joueur</option>
                     </select>
-                    <button class="btn btn-warning" onclick="declareInjuryFromSelect()">🏥 Déclarer une blessure</button>
+                    <button class="btn btn-warning" onclick="declareInjuryFromSelect()">
+                        <i data-lucide="alert-triangle"></i>
+                        Déclarer une blessure
+                    </button>
                 </div>
             </div>
             <div class="table-container">
@@ -275,10 +361,16 @@
         <!-- stratégies -->
         <section id="strategies" class="content-section">
             <div class="section-header">
-                <h2>📋 Gestion des Stratégies</h2>
+                <h2>
+                    <i data-lucide="clipboard-list"></i>
+                    Gestion des Stratégies
+                </h2>
                 <!-- partie pour coach -->
                 <div class="form-group" id="strategy-declaration-controls" style="display: none;">
-                    <button class="btn btn-primary" onclick="showProposeStrategyModal()">+ Proposer une stratégie</button>
+                    <button class="btn btn-primary" onclick="showProposeStrategyModal()">
+                        <i data-lucide="plus"></i>
+                        Proposer une stratégie
+                    </button>
                 </div>
             </div>
             <div class="table-container">
@@ -300,16 +392,21 @@
             </div>
         </section>
 
-
         <!-- Performance -->
         <section id="performance" class="content-section">
             <div class="section-header">
-                <h2>📊 Analyse de Performance</h2>
+                <h2>
+                    <i data-lucide="target"></i>
+                    Analyse de Performance
+                </h2>
                 <div class="form-group">
                     <select id="performance-player-select">
                         <option value="">Sélectionner un joueur</option>
                     </select>
-                    <button class="btn btn-info" onclick="viewDetailedPerformanceFromSelect()">📊 Analyse détaillée</button>
+                    <button class="btn btn-info" onclick="viewDetailedPerformanceFromSelect()">
+                        <i data-lucide="bar-chart"></i>
+                        Analyse détaillée
+                    </button>
                 </div>
             </div>
             
@@ -324,8 +421,14 @@
         <!-- Nouveau compte  -->
         <section id="new-account" class="content-section">
             <div class="section-header">
-                <h2>📊 Création de Nouveau Compte</h2>
-                <button class="btn btn-primary" onclick="showCreateAccountModal()">+ Créer un compte</button>
+                <h2>
+                    <i data-lucide="user-plus"></i>
+                    Création de Nouveau Compte
+                </h2>
+                <button class="btn btn-primary" onclick="showCreateAccountModal()">
+                    <i data-lucide="plus"></i>
+                    Créer un compte
+                </button>
             </div>
             <div class="table-container">
                 <table id="accounts-table">
@@ -345,10 +448,17 @@
         </section>
 
         <!-- Gestion d'équipe (Coach) -->
-         <section id="team-management" class="content-section">
+        <section id="team-management" class="content-section">
             <div class="section-header">
-                <h2>👥 Gestion d'Équipe</h2>
-                <button class="btn btn-primary" onclick="showAddTeamModal()">+ Ajouter une équipe</button>
+                <h2>
+                    
+                    Gestion d'Équipe
+                    <i data-lucide="user-cog"></i>
+                </h2>
+                <button class="btn btn-primary" onclick="showAddTeamModal()">
+                    <i data-lucide="plus"></i>
+                    Ajouter une équipe
+                </button>
             </div>
             
             <div class="table-container">
@@ -384,7 +494,9 @@
 
     <script>
         
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
             
             setTimeout(() => {
                 if (app && app.currentUser && app.hasPermission("injuries", "create")) {
@@ -396,11 +508,9 @@
                 if (app && app.currentUser && app.hasPermission("players", "create")) {
                     document.getElementById("player-creation-controls").style.display = "block";
                 }
-
             }, 1000);
         });
     </script>
-    <!-- <script src="../assets/js/app.js"></script> -->
-     <script type="module" src="../assets/js/main.js"></script>
+    <script type="module" src="../assets/js/main.js"></script>
 </body>
 </html>

@@ -12,44 +12,62 @@ export class InjuryManager {
     }
   }
 
-  displayInjuries(injuries) {
-    const tbody = document.querySelector("#injuries-table tbody")
-    tbody.innerHTML = ""
-    injuries.forEach((injury) => {
-      const row = document.createElement("tr")
-      const injuryDate = new Date(injury.injury_date).toLocaleDateString("fr-FR")
-      const expectedRecovery = injury.expected_recovery_date
-        ? new Date(injury.expected_recovery_date).toLocaleDateString("fr-FR")
-        : "Non définie"
-      let actionButtons = ""
+displayInjuries(injuries) {
+  const tbody = document.querySelector("#injuries-table tbody")
+  tbody.innerHTML = ""
 
-     
-      if (this.app.hasPermission("injuries", "update")) {
-        actionButtons += `<button class="btn btn-success" onclick="markAsRecovered(${injury.id}, ${injury.player_id})">Guéri</button>`
-        actionButtons += `<button class="btn btn-secondary" onclick="editInjury(${injury.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("injuries", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteInjury(${injury.id})">Supprimer</button>`
-      }
-     
-      actionButtons += `<button class="btn btn-info" onclick="viewInjuryDetails(${injury.id})">Détails</button>`
+  injuries.forEach((injury) => {
+    const row = document.createElement("tr")
+    const injuryDate = new Date(injury.injury_date).toLocaleDateString("fr-FR")
+    const expectedRecovery = injury.expected_recovery_date
+      ? new Date(injury.expected_recovery_date).toLocaleDateString("fr-FR")
+      : "Non définie"
 
-      row.innerHTML = `
-        <td>${injury.first_name} ${injury.last_name}</td>
-        <td>${injury.position || "N/A"}</td>
-        <td>${injury.injury_type}</td>
-        <td><span class="status-badge status-${injury.severity}">${injury.severity}</span></td>
-        <td>${injuryDate}</td>
-        <td>${expectedRecovery}</td>
-        <td>${injury.treatment || "Aucun"}</td>
-        <td>${injury.description || "Aucune"}</td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
-      `
-      tbody.appendChild(row)
-    })
-  }
+    let actionButtons = ""
+
+    if (this.app.hasPermission("injuries", "update")) {
+      actionButtons += `
+        <button class="btn btn-success" onclick="markAsRecovered(${injury.id}, ${injury.player_id})" title="Marquer comme guéri">
+          <i data-lucide="heart-pulse"></i>
+        </button>
+        <button class="btn btn-secondary" onclick="editInjury(${injury.id})" title="Modifier">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("injuries", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteInjury(${injury.id})" title="Supprimer">
+          <i data-lucide="trash-2"></i>
+        </button>`
+        
+    }
+
+    actionButtons += `
+      <button class="btn btn-info" onclick="viewInjuryDetails(${injury.id})" title="Voir les détails">
+        <i data-lucide="info"></i>
+      </button>`
+
+    row.innerHTML = `
+      <td>${injury.first_name} ${injury.last_name}</td>
+      <td>${injury.position || "N/A"}</td>
+      <td>${injury.injury_type}</td>
+      <td><span class="status-badge status-${injury.severity}">${injury.severity}</span></td>
+      <td>${injuryDate}</td>
+      <td>${expectedRecovery}</td>
+      <td>${injury.treatment || "Aucun"}</td>
+      <td>${injury.description || "Aucune"}</td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+    tbody.appendChild(row)
+  })
+
+  // Recharge les icônes Lucide
+  lucide.createIcons()
+}
+
 
   declareInjury(playerId) {
     if (!playerId) {

@@ -1,6 +1,7 @@
 export class StatisticsManager {
   constructor(app) {
     this.app = app
+    this.lucide = window.lucide 
   }
 
   async loadAllStatistics() {
@@ -47,12 +48,22 @@ export class StatisticsManager {
       let actionButtons = ""
 
       if (this.app.hasPermission("statistics", "update")) {
-        actionButtons += `<button class="btn btn-secondary btn-sm" onclick="editStatistic(${stat.id})">✏️ Modifier</button>`
+        actionButtons += `
+          <button class="btn btn-secondary" onclick="editStatistic(${stat.id})" title="Modifier">
+            <i data-lucide="edit"></i>
+          </button>`
       }
       if (this.app.hasPermission("statistics", "delete")) {
-        actionButtons += `<button class="btn btn-danger btn-sm" onclick="deleteStatistic(${stat.id})">🗑️ Supprimer</button>`
+        actionButtons += `
+          <button class="btn btn-danger" onclick="deleteStatistic(${stat.id})" title="Supprimer">
+            <i data-lucide="trash-2"></i>
+          </button>`
       }
-      actionButtons += `<button class="btn btn-info btn-sm" onclick="viewStatisticDetails(${stat.id})">👁️ Détails</button>`
+
+      actionButtons += `
+        <button class="btn btn-info" onclick="viewStatisticDetails(${stat.id})" title="Détails">
+          <i data-lucide="eye"></i>
+        </button>`
 
       row.innerHTML = `
         <td style="font-weight: 500;">${stat.first_name} ${stat.last_name}</td>
@@ -67,16 +78,20 @@ export class StatisticsManager {
           ${actionButtons}
         </td>
       `
+
       tbody.appendChild(row)
     })
+
+    // Recharge les icônes Lucide après injection
+    if (this.lucide) {
+      this.lucide.createIcons()
+    }
   }
 
   async populateStatisticsFilters() {
     try {
       const players = await this.app.fetchData("../controllers/PlayerController.php?action=getAll")
       const matches = await this.app.fetchData("../controllers/MatchController.php?action=getAll")
-
-     
       const playerSelect = document.getElementById("filter-player-select")
       if (playerSelect) {
         playerSelect.innerHTML = '<option value="">Tous les joueurs</option>'
@@ -87,8 +102,6 @@ export class StatisticsManager {
           playerSelect.appendChild(option)
         })
       }
-
-    
       const matchSelect = document.getElementById("filter-match-select")
       if (matchSelect) {
         matchSelect.innerHTML = '<option value="">Tous les matchs</option>'
@@ -120,7 +133,7 @@ export class StatisticsManager {
     this.displayAllStatistics(filteredStats)
   }
 
-  addPlayerStats(playerId) {
+  async addPlayerStats(playerId) {
     if (!playerId) {
       alert("ID du joueur manquant")
       return
@@ -130,196 +143,230 @@ export class StatisticsManager {
       return
     }
 
-    const content = `
-      <form id="add-stats-form">
-        <div class="form-group">
-          <label for="match_id">Match</label>
-          <select id="match_id" name="match_id" required>
-            <option value="">Sélectionner un match</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="points">Points</label>
-            <input type="number" id="points" name="points" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="rebounds">Rebonds</label>
-            <input type="number" id="rebounds" name="rebounds" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="assists">Passes</label>
-            <input type="number" id="assists" name="assists" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="steals">Interceptions</label>
-            <input type="number" id="steals" name="steals" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="blocks">Contres</label>
-            <input type="number" id="blocks" name="blocks" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="turnovers">Balles perdues</label>
-            <input type="number" id="turnovers" name="turnovers" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="minutes_played">Minutes jouées</label>
-          <input type="number" id="minutes_played" name="minutes_played" min="0" max="48" value="0" required>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="field_goals_made">Tirs réussis</label>
-            <input type="number" id="field_goals_made" name="field_goals_made" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="field_goals_attempted">Tirs tentés</label>
-            <input type="number" id="field_goals_attempted" name="field_goals_attempted" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="three_points_made">3 points réussis</label>
-            <input type="number" id="three_points_made" name="three_points_made" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="three_points_attempted">3 points tentés</label>
-            <input type="number" id="three_points_attempted" name="three_points_attempted" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="free_throws_made">LF réussis</label>
-            <input type="number" id="free_throws_made" name="free_throws_made" min="0" value="0" required>
-          </div>
-          <div class="form-group">
-            <label for="free_throws_attempted">LF tentés</label>
-            <input type="number" id="free_throws_attempted" name="free_throws_attempted" min="0" value="0" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary">Ajouter les statistiques</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-        </div>
-      </form>
-    `
+    try {
+      // Charger les matchs terminés et les statistiques existantes
+      const [matches, existingStats] = await Promise.all([
+        this.app.fetchData("../controllers/MatchController.php?action=getAll"),
+        this.app.fetchData(`../controllers/StatisticsController.php?action=getAll&player_id=${playerId}`),
+      ])
 
-    window.showModal("Ajouter des Statistiques", content)
+      const completedMatches = matches.filter((match) => match.status === "completed")
 
-   
-    this.app
-      .fetchData("../controllers/MatchController.php?action=getAll")
-      .then((matches) => {
-        const select = document.getElementById("match_id")
-        const completedMatches = matches.filter((match) => match.status === "completed")
-        if (completedMatches.length === 0) {
-          select.innerHTML = '<option value="">Aucun match terminé disponible</option>'
+      if (completedMatches.length === 0) {
+        alert("Aucun match terminé disponible pour ajouter des statistiques")
+        return
+      }
+
+      // Filtrer les matchs pour lesquels le joueur n'a pas encore de statistiques
+      const availableMatches = completedMatches.filter(
+        (match) => !existingStats.some((stat) => stat.match_id == match.id),
+      )
+
+      if (availableMatches.length === 0) {
+        alert("Ce joueur a déjà des statistiques pour tous les matchs terminés")
+        return
+      }
+
+      const content = `
+        <form id="add-stats-form">
+          <div class="form-group">
+            <label for="match_id">Match disponible</label>
+            <select id="match_id" name="match_id" required>
+              <option value="">Sélectionner un match</option>
+              ${availableMatches
+                .map(
+                  (match) => `
+                <option value="${match.id}">
+                  ${match.opponent_name || "Adversaire"} - ${new Date(match.match_date).toLocaleDateString("fr-FR")}
+                </option>
+              `,
+                )
+                .join("")}
+            </select>
+            <small class="form-text text-muted">
+              ${availableMatches.length} match(s) disponible(s) pour ce joueur
+            </small>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="points">Points</label>
+              <input type="number" id="points" name="points" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="rebounds">Rebonds</label>
+              <input type="number" id="rebounds" name="rebounds" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="assists">Passes</label>
+              <input type="number" id="assists" name="assists" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="steals">Interceptions</label>
+              <input type="number" id="steals" name="steals" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="blocks">Contres</label>
+              <input type="number" id="blocks" name="blocks" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="turnovers">Balles perdues</label>
+              <input type="number" id="turnovers" name="turnovers" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="minutes_played">Minutes jouées</label>
+            <input type="number" id="minutes_played" name="minutes_played" min="0" max="48" value="0" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="field_goals_made">Tirs réussis</label>
+              <input type="number" id="field_goals_made" name="field_goals_made" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="field_goals_attempted">Tirs tentés</label>
+              <input type="number" id="field_goals_attempted" name="field_goals_attempted" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="three_points_made">3 points réussis</label>
+              <input type="number" id="three_points_made" name="three_points_made" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="three_points_attempted">3 points tentés</label>
+              <input type="number" id="three_points_attempted" name="three_points_attempted" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="free_throws_made">LF réussis</label>
+              <input type="number" id="free_throws_made" name="free_throws_made" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+              <label for="free_throws_attempted">LF tentés</label>
+              <input type="number" id="free_throws_attempted" name="free_throws_attempted" min="0" value="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary">Ajouter les statistiques</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          </div>
+        </form>
+      `
+
+      window.showModal("Ajouter des Statistiques", content)
+
+      document.getElementById("add-stats-form").addEventListener("submit", async (e) => {
+        e.preventDefault()
+        const formData = new FormData(e.target)
+        const data = Object.fromEntries(formData)
+        data.action = "addStats"
+        data.player_id = playerId
+
+        
+        if (!data.match_id) {
+          alert("Veuillez sélectionner un match")
           return
         }
-        completedMatches.forEach((match) => {
-          const option = document.createElement("option")
-          option.value = match.id
-          option.textContent = `${match.opponent_name || "Adversaire"} - ${new Date(match.match_date).toLocaleDateString()}`
-          select.appendChild(option)
-        })
-      })
-      .catch((error) => {
-        console.error("Erreur lors du chargement des matchs:", error)
-        const select = document.getElementById("match_id")
-        select.innerHTML = '<option value="">Erreur lors du chargement des matchs</option>'
-      })
 
-    document.getElementById("add-stats-form").addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const formData = new FormData(e.target)
-      const data = Object.fromEntries(formData)
-      data.action = "addStats"
-      data.player_id = playerId
+        const numericFields = [
+          "points",
+          "rebounds",
+          "assists",
+          "steals",
+          "blocks",
+          "turnovers",
+          "minutes_played",
+          "field_goals_made",
+          "field_goals_attempted",
+          "three_points_made",
+          "three_points_attempted",
+          "free_throws_made",
+          "free_throws_attempted",
+        ]
 
-     
-      if (!data.match_id) {
-        alert("Veuillez sélectionner un match")
-        return
-      }
-
-      const numericFields = [
-        "points",
-        "rebounds",
-        "assists",
-        "steals",
-        "blocks",
-        "turnovers",
-        "minutes_played",
-        "field_goals_made",
-        "field_goals_attempted",
-        "three_points_made",
-        "three_points_attempted",
-        "free_throws_made",
-        "free_throws_attempted",
-      ]
-
-      for (const field of numericFields) {
-        if (data[field] === "" || isNaN(data[field]) || data[field] < 0) {
-          alert(`Valeur invalide pour ${field}`)
-          return
-        }
-        data[field] = Number.parseInt(data[field])
-      }
-
-     
-      if (Number.parseInt(data.field_goals_made) > Number.parseInt(data.field_goals_attempted)) {
-        alert("Les tirs réussis ne peuvent pas être supérieurs aux tirs tentés")
-        return
-      }
-      if (Number.parseInt(data.three_points_made) > Number.parseInt(data.three_points_attempted)) {
-        alert("Les 3 points réussis ne peuvent pas être supérieurs aux 3 points tentés")
-        return
-      }
-      if (Number.parseInt(data.free_throws_made) > Number.parseInt(data.free_throws_attempted)) {
-        alert("Les lancers francs réussis ne peuvent pas être supérieurs aux lancers francs tentés")
-        return
-      }
-      if (Number.parseInt(data.minutes_played) > 48) {
-        alert("Les minutes jouées ne peuvent pas dépasser 48")
-        return
-      }
-
-      try {
-        console.log("Envoi des données:", data)
-        const response = await fetch("../controllers/StatisticsController.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const result = await response.json()
-        console.log("Résultat reçu:", result)
-
-        if (result.success) {
-          window.closeModal()
-          alert("Statistiques ajoutées avec succès!")
-          if (this.app.currentSection === "statistics") {
-            this.loadPlayerStats()
+        for (const field of numericFields) {
+          if (data[field] === "" || isNaN(data[field]) || data[field] < 0) {
+            alert(`Valeur invalide pour ${field}`)
+            return
           }
-        } else {
-          alert("Erreur lors de l'ajout des statistiques: " + (result.error || "Erreur inconnue"))
+          data[field] = Number.parseInt(data[field])
         }
-      } catch (error) {
-        console.error("Erreur lors de l'ajout des statistiques:", error)
-        alert("Erreur lors de l'ajout des statistiques: " + error.message)
-      }
-    })
+
+        // Validations
+        if (Number.parseInt(data.field_goals_made) > Number.parseInt(data.field_goals_attempted)) {
+          alert("Les tirs réussis ne peuvent pas être supérieurs aux tirs tentés")
+          return
+        }
+        if (Number.parseInt(data.three_points_made) > Number.parseInt(data.three_points_attempted)) {
+          alert("Les 3 points réussis ne peuvent pas être supérieurs aux 3 points tentés")
+          return
+        }
+        if (Number.parseInt(data.free_throws_made) > Number.parseInt(data.free_throws_attempted)) {
+          alert("Les lancers francs réussis ne peuvent pas être supérieurs aux lancers francs tentés")
+          return
+        }
+        if (Number.parseInt(data.minutes_played) > 48) {
+          alert("Les minutes jouées ne peuvent pas dépasser 48")
+          return
+        }
+
+        try {
+          console.log("Envoi des données:", data)
+          const response = await fetch("../controllers/StatisticsController.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const result = await response.json()
+          console.log("Résultat reçu:", result)
+
+          if (result.success) {
+            window.closeModal()
+            alert("Statistiques ajoutées avec succès!")
+            if (this.app.currentSection === "statistics") {
+              this.loadAllStatistics()
+            }
+          } else {
+            alert("Erreur lors de l'ajout des statistiques: " + (result.error || "Erreur inconnue"))
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'ajout des statistiques:", error)
+          alert("Erreur lors de l'ajout des statistiques: " + error.message)
+        }
+      })
+    } catch (error) {
+      console.error("Erreur lors du chargement des données:", error)
+      alert("Erreur lors du chargement des matchs disponibles")
+    }
+  }
+
+  // Méthode pour vérifier les matchs disponibles pour un joueur
+  async getAvailableMatchesForPlayer(playerId) {
+    try {
+      const [matches, existingStats] = await Promise.all([
+        this.app.fetchData("../controllers/MatchController.php?action=getAll"),
+        this.app.fetchData(`../controllers/StatisticsController.php?action=getAll&player_id=${playerId}`),
+      ])
+
+      const completedMatches = matches.filter((match) => match.status === "completed")
+
+      return completedMatches.filter((match) => !existingStats.some((stat) => stat.match_id == match.id))
+    } catch (error) {
+      console.error("Erreur lors du chargement des matchs disponibles:", error)
+      return []
+    }
   }
 
   async loadPlayerStats() {
@@ -456,7 +503,7 @@ export class StatisticsManager {
         data.action = "update"
         data.id = id
 
-        
+
         const numericFields = [
           "points",
           "rebounds",
@@ -481,7 +528,7 @@ export class StatisticsManager {
           data[field] = Number.parseInt(data[field])
         }
 
-       
+        // Validations
         if (Number.parseInt(data.field_goals_made) > Number.parseInt(data.field_goals_attempted)) {
           alert("Les tirs réussis ne peuvent pas être supérieurs aux tirs tentés")
           return

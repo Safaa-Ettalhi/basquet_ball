@@ -12,40 +12,62 @@ export class MatchManager {
     }
   }
 
-  displayMatches(matches) {
-    const tbody = document.querySelector("#matches-table tbody")
-    tbody.innerHTML = ""
-    matches.forEach((match) => {
-      const row = document.createElement("tr")
-      const matchDate = new Date(match.match_date).toLocaleDateString("fr-FR")
-      const score = match.status === "completed" ? `${match.our_score} - ${match.opponent_score}` : "-"
-      let actionButtons = ""
+displayMatches(matches) {
+  const tbody = document.querySelector("#matches-table tbody")
+  tbody.innerHTML = ""
 
-      if (match.status === "scheduled" && this.app.hasPermission("matches", "update")) {
-        actionButtons += `<button class="btn btn-success" onclick="updateMatchScore(${match.id})">Score</button>`
-      }
-      if (this.app.hasPermission("matches", "update")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editMatch(${match.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("matches", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteMatch(${match.id})">Supprimer</button>`
-      }
-      actionButtons += `<button class="btn btn-info" onclick="viewMatchDetails(${match.id})">Détails</button>`
+  matches.forEach((match) => {
+    const row = document.createElement("tr")
+    const matchDate = new Date(match.match_date).toLocaleDateString("fr-FR")
+    const score = match.status === "completed"
+      ? `${match.our_score} - ${match.opponent_score}`
+      : "-"
 
-      row.innerHTML = `
-        <td>${matchDate}</td>
-        <td>${match.opponent_name || "TBD"}</td>
-        <td>${match.location}</td>
-        <td>${match.match_type}</td>
-        <td>${score}</td>
-        <td><span class="status-badge status-${match.status}">${match.status}</span></td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
-      `
-      tbody.appendChild(row)
-    })
-  }
+    let actionButtons = ""
+
+    if (match.status === "scheduled" && this.app.hasPermission("matches", "update")) {
+      actionButtons += `
+        <button class="btn btn-success" onclick="updateMatchScore(${match.id})" title="Entrer le score">
+          <i data-lucide="trophy"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("matches", "update")) {
+      actionButtons += `
+        <button class="btn btn-secondary" onclick="editMatch(${match.id})" title="Modifier le match">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("matches", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteMatch(${match.id})" title="Supprimer le match">
+          <i data-lucide="trash-2"></i>
+        </button>`
+    }
+
+    actionButtons += `
+      <button class="btn btn-info" onclick="viewMatchDetails(${match.id})" title="Voir les détails">
+        <i data-lucide="info"></i>
+      </button>`
+
+    row.innerHTML = `
+      <td>${matchDate}</td>
+      <td>${match.opponent_name || "TBD"}</td>
+      <td>${match.location}</td>
+      <td>${match.match_type}</td>
+      <td>${score}</td>
+      <td><span class="status-badge status-${match.status}">${match.status}</span></td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+    tbody.appendChild(row)
+  })
+
+  // Recharge les icônes Lucide après DOM update
+  lucide.createIcons()
+}
 
   showAddMatchModal() {
     if (!this.app.hasPermission("matches", "create")) {

@@ -12,42 +12,65 @@ export class StrategyManager {
     }
   }
 
-  displayStrategiesTable(strategies) {
-    const tbody = document.querySelector("#strategies-table tbody")
-    if (!tbody) return
+displayStrategiesTable(strategies) {
+  const tbody = document.querySelector("#strategies-table tbody")
+  if (!tbody) return
 
-    tbody.innerHTML = ""
-    strategies.forEach((strategy) => {
-      const row = document.createElement("tr")
-      const matchDate = strategy.match_date ? new Date(strategy.match_date).toLocaleDateString("fr-FR") : "N/A"
-      let actionButtons = ""
+  tbody.innerHTML = ""
 
-      if (this.app.hasPermission("strategies", "validate") && strategy.status === "pending") {
-        actionButtons += `
-          <button class="btn btn-success" onclick="validateStrategy(${strategy.id}, 'approved')">Approuver</button>
-          <button class="btn btn-danger" onclick="validateStrategy(${strategy.id}, 'rejected')">Rejeter</button>
-        `
-      }
-      if (this.app.hasPermission("strategies", "update")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editStrategy(${strategy.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("strategies", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteStrategy(${strategy.id})">Supprimer</button>`
-      }
+  strategies.forEach((strategy) => {
+    const row = document.createElement("tr")
+    const matchDate = strategy.match_date
+      ? new Date(strategy.match_date).toLocaleDateString("fr-FR")
+      : "N/A"
 
-      row.innerHTML = `
-        <td>${strategy.opponent_name || "N/A"} - ${matchDate}</td>
-        <td>${strategy.strategy_name}</td>
-        <td>${strategy.proposed_by_name}</td>
-        <td><span class="status-badge status-${strategy.status}">${strategy.status}</span></td>
-        <td>${strategy.comments}</td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
+    let actionButtons = ""
+
+    if (
+      this.app.hasPermission("strategies", "validate") &&
+      strategy.status === "pending"
+    ) {
+      actionButtons += `
+        <button class="btn btn-success" onclick="validateStrategy(${strategy.id}, 'approved')" title="Approuver">
+          <i data-lucide="check-circle"></i>
+        </button>
+        <button class="btn btn-danger" onclick="validateStrategy(${strategy.id}, 'rejected')" title="Rejeter">
+          <i data-lucide="x-circle"></i>
+        </button>
       `
-      tbody.appendChild(row)
-    })
-  }
+    }
+
+    if (this.app.hasPermission("strategies", "update")) {
+      actionButtons += `
+        <button class="btn btn-secondary" onclick="editStrategy(${strategy.id})" title="Modifier">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("strategies", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteStrategy(${strategy.id})" title="Supprimer">
+          <i data-lucide="trash-2"></i>
+        </button>`
+    }
+
+    row.innerHTML = `
+      <td>${strategy.opponent_name || "N/A"} - ${matchDate}</td>
+      <td>${strategy.strategy_name}</td>
+      <td>${strategy.proposed_by_name}</td>
+      <td><span class="status-badge status-${strategy.status}">${strategy.status}</span></td>
+      <td>${strategy.comments || ""}</td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+
+    tbody.appendChild(row)
+  })
+
+  lucide.createIcons()
+}
+
 
   showProposeStrategyModal() {
     if (!this.app.hasPermission("strategies", "create")) {

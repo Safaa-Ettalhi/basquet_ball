@@ -7,9 +7,13 @@ export class BasketballApp {
   }
 
   async init() {
+    // this.hideNavigationDuringLoad()
+
     await this.loadCurrentUser()
-    this.setupNavigation()
     this.setupRoleBasedUI()
+    this.setupNavigation()
+    this.showNavigationAfterLoad()
+
     this.loadDashboard()
     this.loadPlayers()
     this.loadMatches()
@@ -19,12 +23,28 @@ export class BasketballApp {
     this.loadAccountManagement()
   }
 
+  // hideNavigationDuringLoad() {
+  //   const navUl = document.querySelector("nav ul")
+  //   if (navUl) {
+  //     navUl.classList.add("nav-loading")
+  //     navUl.style.display = "none"
+  //   }
+  // }
+
+  showNavigationAfterLoad() {
+    const navUl = document.querySelector("nav ul")
+    if (navUl) {
+      navUl.style.display = "flex"
+      navUl.classList.remove("nav-loading")
+      navUl.classList.add("nav-ready", "nav-loaded")
+    }
+  }
+
   async loadCurrentUser() {
     try {
       const response = await fetch("../auth/AuthController.php?action=getCurrentUser")
       this.currentUser = await response.json()
       console.log("Utilisateur actuel:", this.currentUser)
-      document.getElementById("loading-navs").classList.remove("loading-navs")
     } catch (error) {
       console.error("Erreur lors du chargement de l'utilisateur:", error)
     }
@@ -54,9 +74,9 @@ export class BasketballApp {
     navItems.forEach((link) => {
       const section = link.getAttribute("href")?.substring(1) || ""
       if (link.classList.contains("logout-btn")) return
-
-      if (!rolePermissions[role] || !rolePermissions[role].includes(section)) {
-        link.style.display = "none"
+      link.style.display = "none"
+      if (rolePermissions[role] && rolePermissions[role].includes(section)) {
+        link.style.display = "flex"
       }
     })
     this.setupButtonPermissions(role)
@@ -72,7 +92,7 @@ export class BasketballApp {
         strategies: ["read", "create", "update", "delete"],
         statistics: ["read"],
         injuries: ["read", "create", "update", "delete"],
-        
+        team: ["read", "manage"],
       },
       manager: {
         players: ["read", "create", "update_admin", "delete"],
@@ -82,7 +102,6 @@ export class BasketballApp {
         statistics: ["read"],
         "new-account": ["read", "create", "update", "delete"],
         injuries: ["read"],
-       
         team: ["read", "create", "update", "delete", "manage"],
       },
       analyste: {

@@ -16,21 +16,41 @@ export class PlayerManager {
   displayPlayers(players) {
     const tbody = document.querySelector("#players-table tbody")
     tbody.innerHTML = ""
+
     players.forEach((player) => {
       const row = document.createElement("tr")
       let actionButtons = ""
 
       if (this.app.hasPermission("players", "update_admin") || this.app.hasPermission("players", "update_sports")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editPlayer(${player.id})">Modifier</button>`
+        actionButtons += `
+          <button class="btn btn-secondary" onclick="editPlayer(${player.id})" title="Modifier">
+            <i data-lucide="edit"></i>
+          </button>`
       }
+
       if (this.app.hasPermission("players", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deletePlayer(${player.id})">Supprimer</button>`
+        actionButtons += `
+          <button class="btn btn-danger" onclick="deletePlayer(${player.id})" title="Supprimer">
+            <i data-lucide="trash-2"></i>
+          </button>`
       }
-      actionButtons += `<button class="btn btn-info" onclick="viewPlayerStats(${player.id})">Stats</button>`
+
+      actionButtons += `
+        <button class="btn btn-info" onclick="viewPlayerStats(${player.id})" title="Voir les stats">
+          <i data-lucide="bar-chart-3"></i>
+        </button>`
 
       if (this.app.hasPermission("statistics", "create")) {
-        actionButtons += `<button class="btn btn-success" onclick="addPlayerStats(${player.id})">+ Stats</button>`
+        actionButtons += `
+          <button class="btn btn-success" onclick="addPlayerStats(${player.id})" title="Ajouter des stats">
+            <i data-lucide="plus-circle"></i>
+          </button>`
       }
+
+      // Afficher le statut d'équipe
+      const teamStatus = player.team_id
+        ? `<span class="status-badge status-assigned">Assigné à équipe</span>`
+        : `<span class="status-badge status-available">Disponible</span>`
 
       row.innerHTML = `
         <td>${player.first_name} ${player.last_name}</td>
@@ -41,29 +61,107 @@ export class PlayerManager {
         <td>${Number.parseInt(player.salary).toLocaleString()} Dhs</td>
         <td><span class="status-badge status-${player.health_status}">${player.health_status}</span></td>
         <td><span class="status-badge status-${player.role || "player"}">${player.role || "player"}</span></td>
+        <td>${teamStatus}</td>
         <td class="action-buttons">
           ${actionButtons}
         </td>
       `
+
       tbody.appendChild(row)
     })
+
+    // Recharge les icônes Lucide
+    lucide.createIcons()
   }
 
-  populatePlayerSelect(players) {
+  // filtrer les joueurs disponibles
+  populatePlayerSelect(players, excludeAssigned = true) {
     const selects = document.querySelectorAll(
       "#player-select, #performance-player-select, #stats-player-select, #injury-player-select",
     )
+
     selects.forEach((select) => {
       if (select) {
         select.innerHTML = '<option value="">Sélectionner un joueur</option>'
-        players.forEach((player) => {
+
+        // Filtrer les joueurs selon le paramètre excludeAssigned
+        const availablePlayers = excludeAssigned
+          ? players.filter((player) => !player.team_id || player.team_id === null)
+          : players
+
+        if (availablePlayers.length === 0 && excludeAssigned) {
           const option = document.createElement("option")
-          option.value = player.id
-          option.textContent = `${player.first_name} ${player.last_name}`
+          option.value = ""
+          option.textContent = "Aucun joueur disponible"
+          option.disabled = true
           select.appendChild(option)
-        })
+        } else {
+          availablePlayers.forEach((player) => {
+            const option = document.createElement("option")
+            option.value = player.id
+            option.textContent = `${player.first_name} ${player.last_name}${player.team_id ? " (Assigné)" : ""}`
+
+            //  désactiver les joueurs déjà assignés
+            if (player.team_id && excludeAssigned) {
+              option.disabled = true
+              option.style.color = "#999"
+            }
+
+            select.appendChild(option)
+          })
+        }
       }
     })
+  }
+
+  //  obtenir uniquement les joueurs disponibles
+  async getAvailablePlayers() {
+    try {
+      const allPlayers = await this.app.fetchData("../controllers/PlayerController.php?action=getAll")
+      return allPlayers.filter((player) => !player.team_id || player.team_id === null)
+    } catch (error) {
+      console.error("Erreur lors du chargement des joueurs disponibles:", error)
+      return []
+    }
+  }
+
+  // Méthode pour peupler un select spécifique avec seulement les joueurs disponibles
+  async populateAvailablePlayersSelect(selectId) {
+    try {
+      const availablePlayers = await this.getAvailablePlayers()
+      const select = document.querySelector(selectId)
+
+      if (select) {
+        select.innerHTML = '<option value="">Sélectionner un joueur disponible</option>'
+
+        if (availablePlayers.length === 0) {
+          const option = document.createElement("option")
+          option.value = ""
+          option.textContent = "Aucun joueur disponible"
+          option.disabled = true
+          select.appendChild(option)
+        } else {
+          availablePlayers.forEach((player) => {
+            const option = document.createElement("option")
+            option.value = player.id
+            option.textContent = `${player.first_name} ${player.last_name} (${player.position})`
+            select.appendChild(option)
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du peuplement du select:", error)
+    }
+  }
+
+  // Méthode pour rafraîchir tous les selects après un changement d'équipe
+  async refreshPlayerSelects() {
+    try {
+      const players = await this.app.fetchData("../controllers/PlayerController.php?action=getAll")
+      this.populatePlayerSelect(players, true) 
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement des selects:", error)
+    }
   }
 
   showAddPlayerModal() {
@@ -151,6 +249,7 @@ export class PlayerManager {
         if (result.success) {
           window.closeModal()
           this.loadPlayers()
+          this.refreshPlayerSelects() 
           this.app.loadDashboard()
           alert("Joueur ajouté avec succès!")
         } else {
@@ -199,6 +298,7 @@ export class PlayerManager {
           if (result.success) {
             window.closeModal()
             this.loadPlayers()
+            this.refreshPlayerSelects() 
             this.app.loadDashboard()
             alert("Joueur modifié avec succès!")
           } else {
@@ -317,6 +417,7 @@ export class PlayerManager {
         })
         if (result.success) {
           this.loadPlayers()
+          this.refreshPlayerSelects() 
           this.app.loadDashboard()
           alert("Joueur supprimé avec succès!")
         }

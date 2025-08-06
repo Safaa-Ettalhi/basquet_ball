@@ -14,28 +14,37 @@ export class PerformanceManager {
     }
   }
 
-  displayTeamPerformance(players) {
-    const container = document.getElementById("team-performance")
-    if (!container) return
+displayTeamPerformance(players) {
+  const container = document.getElementById("team-performance")
+  if (!container) return
 
-    container.innerHTML = ""
-    players.forEach((player) => {
-      const playerDiv = document.createElement("div")
-      playerDiv.className = "performance-card"
-      playerDiv.innerHTML = `
-        <h4>${player.first_name} ${player.last_name}</h4>
-        <p>Position: ${player.position}</p>
-        <div class="performance-stats">
-          <span>Points: ${Number.parseFloat(player.avg_points || 0).toFixed(1)}</span>
-          <span>Rebonds: ${Number.parseFloat(player.avg_rebounds || 0).toFixed(1)}</span>
-          <span>Passes: ${Number.parseFloat(player.avg_assists || 0).toFixed(1)}</span>
-          <span>Matchs: ${player.games_played || 0}</span>
-        </div>
-        <button class="btn btn-info" onclick="viewDetailedPerformance(${player.id})">Analyse détaillée</button>
-      `
-      container.appendChild(playerDiv)
-    })
-  }
+  container.innerHTML = ""
+
+  players.forEach((player) => {
+    const playerDiv = document.createElement("div")
+    playerDiv.className = "performance-card"
+
+    playerDiv.innerHTML = `
+      <h4>${player.first_name} ${player.last_name}</h4>
+      <p>Position: ${player.position}</p>
+      <div class="performance-stats">
+        <span>Points: ${Number.parseFloat(player.avg_points || 0).toFixed(1)}</span>
+        <span>Rebonds: ${Number.parseFloat(player.avg_rebounds || 0).toFixed(1)}</span>
+        <span>Passes: ${Number.parseFloat(player.avg_assists || 0).toFixed(1)}</span>
+        <span>Matchs: ${player.games_played || 0}</span>
+      </div>
+      <button class="btn btn-info" onclick="viewDetailedPerformance(${player.id})" title="Analyse détaillée">
+        <i data-lucide="bar-chart-3"></i>
+      </button>
+    `
+
+    container.appendChild(playerDiv)
+  })
+
+  // Recharge les icônes Lucide après mise à jour du DOM
+  lucide.createIcons()
+}
+
 
   async viewDetailedPerformance(playerId) {
     if (!this.app.hasPermission("performance", "analyze")) {

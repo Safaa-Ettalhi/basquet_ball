@@ -12,44 +12,53 @@ export class AccountManager {
     }
   }
 
-  displayAccountsTable(accounts) {
-    const tbody = document.querySelector("#accounts-table tbody")
-    if (!tbody) return
+displayAccountsTable(accounts) {
+  const tbody = document.querySelector("#accounts-table tbody")
+  if (!tbody) return
 
-    tbody.innerHTML = ""
-    if (accounts.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align: center; color: #6c757d; font-style: italic; padding: 2rem;">
-            Aucun compte trouvé. Cliquez sur "Ajouter un compte" pour commencer.
-          </td>
-        </tr>
-      `
-      return
+  tbody.innerHTML = ""
+  if (accounts.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: #6c757d; font-style: italic; padding: 2rem;">
+          Aucun compte trouvé. Cliquez sur "Ajouter un compte" pour commencer.
+        </td>
+      </tr>
+    `
+    return
+  }
+
+  accounts.forEach((account) => {
+    const row = document.createElement("tr")
+    let actionButtons = ""
+
+    if (this.app.hasPermission("new-account", "update")) {
+      actionButtons += `
+        <button class="btn btn-secondary" onclick="editAccount(${account.id})" title="Modifier">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+    if (this.app.hasPermission("new-account", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteAccount(${account.id})" title="Supprimer">
+          <i data-lucide="trash-2"></i>
+        </button>`
     }
 
-    accounts.forEach((account) => {
-      const row = document.createElement("tr")
-      let actionButtons = ""
+    row.innerHTML = `
+      <td>${account.username}</td>
+      <td>${account.email}</td>
+      <td>${account.role}</td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+    tbody.appendChild(row)
+  })
 
-      if (this.app.hasPermission("new-account", "update")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editAccount(${account.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("new-account", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteAccount(${account.id})">Supprimer</button>`
-      }
-
-      row.innerHTML = `
-        <td>${account.username}</td>
-        <td>${account.email}</td>
-        <td>${account.role}</td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
-      `
-      tbody.appendChild(row)
-    })
-  }
+  // Recharge les icônes Lucide après l’injection du HTML
+  lucide.createIcons()
+}
 
   async showCreateAccountModal() {
     if (!this.app.hasPermission("new-account", "create")) {

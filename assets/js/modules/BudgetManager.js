@@ -23,38 +23,51 @@ export class BudgetManager {
       `${Number.parseInt(summary.balance || 0).toLocaleString()} Dhs`
   }
 
-  displayBudgetItems(items) {
-    const tbody = document.querySelector("#budget-table tbody")
-    tbody.innerHTML = ""
-    items.forEach((item) => {
-      const row = document.createElement("tr")
-      const itemDate = new Date(item.transaction_date).toLocaleDateString("fr-FR")
-      const amount =
-        item.transaction_type === "income"
-          ? `+${Number.parseInt(item.amount).toLocaleString()} Dhs`
-          : `-${Number.parseInt(item.amount).toLocaleString()} Dhs`
-      let actionButtons = ""
+displayBudgetItems(items) {
+  const tbody = document.querySelector("#budget-table tbody")
+  tbody.innerHTML = ""
 
-      if (this.app.hasPermission("budget", "update")) {
-        actionButtons += `<button class="btn btn-secondary" onclick="editBudgetItem(${item.id})">Modifier</button>`
-      }
-      if (this.app.hasPermission("budget", "delete")) {
-        actionButtons += `<button class="btn btn-danger" onclick="deleteBudgetItem(${item.id})">Supprimer</button>`
-      }
+  items.forEach((item) => {
+    const row = document.createElement("tr")
+    const itemDate = new Date(item.transaction_date).toLocaleDateString("fr-FR")
 
-      row.innerHTML = `
-        <td>${itemDate}</td>
-        <td>${item.category}</td>
-        <td>${item.description}</td>
-        <td>${item.transaction_type}</td>
-        <td class="${item.transaction_type === "income" ? "income" : "expense"}">${amount}</td>
-        <td class="action-buttons">
-          ${actionButtons}
-        </td>
-      `
-      tbody.appendChild(row)
-    })
-  }
+    const amount = item.transaction_type === "income"
+      ? `+${Number.parseInt(item.amount).toLocaleString()} Dhs`
+      : `-${Number.parseInt(item.amount).toLocaleString()} Dhs`
+
+    let actionButtons = ""
+
+    if (this.app.hasPermission("budget", "update")) {
+      actionButtons += `
+        <button class="btn btn-secondary " onclick="editBudgetItem(${item.id})" title="Modifier">
+          <i data-lucide="edit"></i>
+        </button>`
+    }
+
+    if (this.app.hasPermission("budget", "delete")) {
+      actionButtons += `
+        <button class="btn btn-danger" onclick="deleteBudgetItem(${item.id})" title="Supprimer">
+          <i data-lucide="trash-2"></i>
+        </button>`
+    }
+
+    row.innerHTML = `
+      <td>${itemDate}</td>
+      <td>${item.category}</td>
+      <td>${item.description}</td>
+      <td>${item.transaction_type}</td>
+      <td class="${item.transaction_type === "income" ? "income" : "expense"}">${amount}</td>
+      <td class="action-buttons">
+        ${actionButtons}
+      </td>
+    `
+    tbody.appendChild(row)
+  })
+
+  // Recharge les icônes Lucide après modification du DOM
+  lucide.createIcons()
+}
+
 
   showAddBudgetModal() {
     if (!this.app.hasPermission("budget", "create")) {

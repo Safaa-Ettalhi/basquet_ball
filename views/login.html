@@ -3,81 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - Gestion Basketball</title>
+    <title>Connexion - Basketball Manager</title>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .login-form {
-            background: white;
-            padding: 3rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .login-form h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: #333;
-        }
-        
-        .login-form .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .login-form .btn {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.1rem;
-        }
-        
-        .demo-credentials {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-        
-        .demo-credentials h4 {
-            margin-bottom: 0.5rem;
-            color: #666;
-        }
-        
-        .demo-credentials p {
-            margin: 0.25rem 0;
-            color: #888;
-        }
-    </style>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-form">
-            <h1>🏀 Basketball Manager</h1>
+            <h1>
+                <i data-lucide="shield-check"></i>
+                Basketball Manager
+            </h1>
             <form id="login-form">
                 <div class="form-group">
-                    <label for="username">Nom d'utilisateur</label>
-                    <input type="text" id="username" name="username" required>
+                    <label for="username">
+                        <i data-lucide="user"></i>
+                        Nom d'utilisateur
+                    </label>
+                    <input type="text" id="username" name="username" required placeholder="Entrez votre nom d'utilisateur">
                 </div>
                 <div class="form-group">
-                    <label for="password">Mot de passe</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password">
+                        <i data-lucide="lock"></i>
+                        Mot de passe
+                    </label>
+                    <input type="password" id="password" name="password" required placeholder="Entrez votre mot de passe">
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Se connecter</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="log-in"></i>
+                        Se connecter
+                    </button>
                 </div>
             </form>
             
             <div class="demo-credentials">
-                <h4>Comptes de démonstration :</h4>
+                <h4>
+                    <i data-lucide="info"></i>
+                    Comptes de démonstration
+                </h4>
                 <p><strong>Coach :</strong> coach_john / password</p>
                 <p><strong>Manager :</strong> manager_sarah / password</p>
                 <p><strong>Analyste :</strong> analyst_mike / password</p>
@@ -86,6 +50,11 @@
     </div>
 
     <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             

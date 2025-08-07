@@ -68,7 +68,16 @@ displayInjuries(injuries) {
   lucide.createIcons()
 }
 
+  getTodayDate() {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
 
+  getTomorrowDate() {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toISOString().split('T')[0]
+  }
   declareInjury(playerId) {
     if (!playerId) {
       alert("ID du joueur manquant")
@@ -79,7 +88,8 @@ displayInjuries(injuries) {
       return
     }
 
-    const today = new Date().toISOString().split("T")[0]
+    const todayDate = this.getTodayDate()
+    const tomorrowDate = this.getTomorrowDate()
     const content = `
       <form id="declare-injury-form">
         <div class="form-row">
@@ -113,11 +123,11 @@ displayInjuries(injuries) {
         <div class="form-row">
           <div class="form-group">
             <label for="injury_date">Date de la blessure</label>
-            <input type="date" id="injury_date" name="injury_date" value="${today}" required>
+            <input type="date" id="injury_date" name="injury_date" min="${todayDate}" value="${todayDate}" required>
           </div>
           <div class="form-group">
             <label for="expected_recovery_date">Date de récupération prévue</label>
-            <input type="date" id="expected_recovery_date" name="expected_recovery_date">
+            <input type="date" id="expected_recovery_date" name="expected_recovery_date" min="${tomorrowDate}">
           </div>
         </div>
         <div class="form-group">
@@ -132,9 +142,54 @@ displayInjuries(injuries) {
     `
 
     window.showModal("🏥 Déclarer une Blessure", content)
+   
+    document.getElementById("injury_date").addEventListener("change", (e) => {
+      const injuryDate = new Date(e.target.value)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      if (injuryDate < today) {
+        alert("La date de blessure ne peut pas être antérieure à aujourd'hui")
+        e.target.value = todayDate
+      }
+      
+      const recoveryInput = document.getElementById("expected_recovery_date")
+      const minRecoveryDate = new Date(injuryDate)
+      minRecoveryDate.setDate(minRecoveryDate.getDate() + 1)
+      recoveryInput.min = minRecoveryDate.toISOString().split('T')[0]
+      
+      if (recoveryInput.value && new Date(recoveryInput.value) <= injuryDate) {
+        recoveryInput.value = minRecoveryDate.toISOString().split('T')[0]
+      }
+    })
 
+    document.getElementById("expected_recovery_date").addEventListener("change", (e) => {
+      const recoveryDate = new Date(e.target.value)
+      const injuryDate = new Date(document.getElementById("injury_date").value)
+      
+      if (recoveryDate <= injuryDate) {
+        alert("La date de récupération doit être postérieure à la date de blessure")
+        const minRecoveryDate = new Date(injuryDate)
+        minRecoveryDate.setDate(minRecoveryDate.getDate() + 1)
+        e.target.value = minRecoveryDate.toISOString().split('T')[0]
+      }
+    })
     document.getElementById("declare-injury-form").addEventListener("submit", async (e) => {
       e.preventDefault()
+      const injuryDate = new Date(document.getElementById("injury_date").value)
+      const recoveryDate = new Date(document.getElementById("expected_recovery_date").value)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      if (injuryDate < today) {
+        alert("La date de blessure ne peut pas être antérieure à aujourd'hui")
+        return
+      }
+      
+      if (recoveryDate <= injuryDate) {
+        alert("La date de récupération doit être postérieure à la date de blessure")
+        return
+      }
       const formData = new FormData(e.target)
       const data = Object.fromEntries(formData)
       data.action = "create"

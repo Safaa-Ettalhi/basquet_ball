@@ -290,81 +290,128 @@ displayInjuries(injuries) {
     }
   }
 
-  async editInjury(id) {
-    if (!this.app.hasPermission("injuries", "update")) {
-      alert("Vous n'avez pas les permissions pour modifier une blessure")
-      return
-    }
-
-    try {
-      const injury = await this.app.fetchData(`../controllers/InjuryController.php?action=getOne&id=${id}`)
-      const content = `
-        <form id="edit-injury-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="injury_type">Type de blessure</label>
-              <select id="injury_type" name="injury_type" required>
-                <option value="muscle" ${injury.injury_type === "muscle" ? "selected" : ""}>Blessure musculaire</option>
-                <option value="joint" ${injury.injury_type === "joint" ? "selected" : ""}>Blessure articulaire</option>
-                <option value="bone" ${injury.injury_type === "bone" ? "selected" : ""}>Fracture</option>
-                <option value="ligament" ${injury.injury_type === "ligament" ? "selected" : ""}>Blessure ligamentaire</option>
-                <option value="concussion" ${injury.injury_type === "concussion" ? "selected" : ""}>Commotion</option>
-                <option value="other" ${injury.injury_type === "other" ? "selected" : ""}>Autre</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="severity">Gravité</label>
-              <select id="severity" name="severity" required>
-                <option value="minor" ${injury.severity === "minor" ? "selected" : ""}>Mineure</option>
-                <option value="moderate" ${injury.severity === "moderate" ? "selected" : ""}>Modérée</option>
-                <option value="major" ${injury.severity === "major" ? "selected" : ""}>Majeure</option>
-                <option value="severe" ${injury.severity === "severe" ? "selected" : ""}>Sévère</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="3" required>${injury.description}</textarea>
-          </div>
-          <div class="form-group">
-            <label for="expected_recovery_date">Date de récupération prévue</label>
-            <input type="date" id="expected_recovery_date" name="expected_recovery_date" value="${injury.expected_recovery_date}">
-          </div>
-          <div class="form-group">
-            <label for="treatment">Traitement</label>
-            <textarea id="treatment" name="treatment" rows="2">${injury.treatment || ""}</textarea>
-          </div>
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary">Modifier la blessure</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-          </div>
-        </form>
-      `
-
-      window.showModal("Modifier la Blessure", content)
-
-      document.getElementById("edit-injury-form").addEventListener("submit", async (e) => {
-        e.preventDefault()
-        const formData = new FormData(e.target)
-        const data = Object.fromEntries(formData)
-        data.action = "update"
-        data.id = id
-
-        try {
-          const result = await this.app.postData("../controllers/InjuryController.php", data)
-          if (result.success) {
-            window.closeModal()
-            this.loadInjuries()
-            alert("Blessure modifiée avec succès!")
-          }
-        } catch (error) {
-          console.error("Erreur lors de la modification de la blessure:", error)
-        }
-      })
-    } catch (error) {
-      console.error("Erreur lors du chargement de la blessure:", error)
-    }
+async editInjury(id) {
+  if (!this.app.hasPermission("injuries", "update")) {
+    alert("Vous n'avez pas les permissions pour modifier une blessure")
+    return
   }
+
+  try {
+    const injury = await this.app.fetchData(`../controllers/InjuryController.php?action=getOne&id=${id}`)
+    
+    const content = `
+      <form id="edit-injury-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="injury_type">Type de blessure</label>
+            <select id="injury_type" name="injury_type" required>
+              <option value="muscle" ${injury.injury_type === "muscle" ? "selected" : ""}>Blessure musculaire</option>
+              <option value="joint" ${injury.injury_type === "joint" ? "selected" : ""}>Blessure articulaire</option>
+              <option value="bone" ${injury.injury_type === "bone" ? "selected" : ""}>Fracture</option>
+              <option value="ligament" ${injury.injury_type === "ligament" ? "selected" : ""}>Blessure ligamentaire</option>
+              <option value="concussion" ${injury.injury_type === "concussion" ? "selected" : ""}>Commotion</option>
+              <option value="other" ${injury.injury_type === "other" ? "selected" : ""}>Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="severity">Gravité</label>
+            <select id="severity" name="severity" required>
+              <option value="minor" ${injury.severity === "minor" ? "selected" : ""}>Mineure</option>
+              <option value="moderate" ${injury.severity === "moderate" ? "selected" : ""}>Modérée</option>
+              <option value="major" ${injury.severity === "major" ? "selected" : ""}>Majeure</option>
+              <option value="severe" ${injury.severity === "severe" ? "selected" : ""}>Sévère</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="3" required>${injury.description}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="expected_recovery_date">Date de récupération prévue</label>
+          <input type="date" id="expected_recovery_date" name="expected_recovery_date" value="${injury.expected_recovery_date || ''}">
+          <small class="form-help">Doit être supérieure à la date de blessure (${new Date(injury.injury_date).toLocaleDateString('fr-FR')})</small>
+          <div id="recovery-alert" class="alert alert-warning" style="display: none; margin-top: 5px;">
+            ⚠️ La date de récupération doit être postérieure à la date de blessure
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="treatment">Traitement</label>
+          <textarea id="treatment" name="treatment" rows="2">${injury.treatment || ""}</textarea>
+        </div>
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary">Modifier la blessure</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+        </div>
+      </form>
+    `
+
+    window.showModal("Modifier la Blessure", content)
+
+    const showAlert = (show) => {
+      const alert = document.getElementById("recovery-alert")
+      if (alert) {
+        alert.style.display = show ? "block" : "none"
+      }
+    }
+
+    document.getElementById("expected_recovery_date").addEventListener("change", (e) => {
+      if (e.target.value) {
+        const recoveryDate = new Date(e.target.value)
+        const injuryDate = new Date(injury.injury_date)
+        
+        if (recoveryDate <= injuryDate) {
+          showAlert(true)
+          setTimeout(() => {
+            e.target.focus()
+          }, 100)
+        } else {
+          showAlert(false)
+        }
+      } else {
+        showAlert(false)
+      }
+    })
+
+    document.getElementById("edit-injury-form").addEventListener("submit", async (e) => {
+      e.preventDefault()
+      
+      // Validation finale avant soumission
+      const recoveryDateValue = document.getElementById("expected_recovery_date").value
+      if (recoveryDateValue) {
+        const recoveryDate = new Date(recoveryDateValue)
+        const injuryDate = new Date(injury.injury_date)
+        
+        if (recoveryDate <= injuryDate) {
+          alert("La date de récupération prévue doit être postérieure à la date de blessure")
+          showAlert(true)
+          return
+        }
+      }
+      
+      const formData = new FormData(e.target)
+      const data = Object.fromEntries(formData)
+      data.action = "update"
+      data.id = id
+
+      try {
+        const result = await this.app.postData("../controllers/InjuryController.php", data)
+        if (result.success) {
+          window.closeModal()
+          this.loadInjuries()
+          alert("Blessure modifiée avec succès!")
+        } else {
+          alert("Erreur lors de la modification: " + (result.error || "Erreur inconnue"))
+        }
+      } catch (error) {
+        console.error("Erreur lors de la modification de la blessure:", error)
+        alert("Erreur lors de la modification de la blessure")
+      }
+    })
+  } catch (error) {
+    console.error("Erreur lors du chargement de la blessure:", error)
+  }
+}
 
   async deleteInjury(id) {
     if (!this.app.hasPermission("injuries", "delete")) {

@@ -47,7 +47,6 @@ export class PlayerManager {
           </button>`
       }
 
-      // Afficher le statut d'équipe
       const teamStatus = player.team_id
         ? `<span class="status-badge status-assigned">Assigné à équipe</span>`
         : `<span class="status-badge status-available">Disponible</span>`
@@ -70,11 +69,9 @@ export class PlayerManager {
       tbody.appendChild(row)
     })
 
-    // Recharge les icônes Lucide
     lucide.createIcons()
   }
 
-  // filtrer les joueurs disponibles
   populatePlayerSelect(players, excludeAssigned = true) {
     const selects = document.querySelectorAll(
       "#player-select, #performance-player-select, #stats-player-select, #injury-player-select",
@@ -84,7 +81,6 @@ export class PlayerManager {
       if (select) {
         select.innerHTML = '<option value="">Sélectionner un joueur</option>'
 
-        // Filtrer les joueurs selon le paramètre excludeAssigned
         const availablePlayers = excludeAssigned
           ? players.filter((player) => !player.team_id || player.team_id === null)
           : players
@@ -101,7 +97,6 @@ export class PlayerManager {
             option.value = player.id
             option.textContent = `${player.first_name} ${player.last_name}${player.team_id ? " (Assigné)" : ""}`
 
-            //  désactiver les joueurs déjà assignés
             if (player.team_id && excludeAssigned) {
               option.disabled = true
               option.style.color = "#999"
@@ -114,7 +109,6 @@ export class PlayerManager {
     })
   }
 
-  //  obtenir uniquement les joueurs disponibles
   async getAvailablePlayers() {
     try {
       const allPlayers = await this.app.fetchData("../controllers/PlayerController.php?action=getAll")
@@ -125,7 +119,7 @@ export class PlayerManager {
     }
   }
 
-  // Méthode pour peupler un select spécifique avec seulement les joueurs disponibles
+ 
   async populateAvailablePlayersSelect(selectId) {
     try {
       const availablePlayers = await this.getAvailablePlayers()
@@ -154,7 +148,6 @@ export class PlayerManager {
     }
   }
 
-  // Méthode pour rafraîchir tous les selects après un changement d'équipe
   async refreshPlayerSelects() {
     try {
       const players = await this.app.fetchData("../controllers/PlayerController.php?action=getAll")
@@ -164,103 +157,161 @@ export class PlayerManager {
     }
   }
 
-  showAddPlayerModal() {
-    if (!this.app.hasPermission("players", "create")) {
-      alert("Vous n'avez pas les permissions pour ajouter un joueur")
-      return
+  getMaxBirthDate() {
+    const today = new Date()
+    const maxBirthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+    return maxBirthDate.toISOString().split('T')[0]
+  }
+
+showAddPlayerModal() {
+  if (!this.app.hasPermission("players", "create")) {
+    alert("Vous n'avez pas les permissions pour ajouter un joueur")
+    return
+  }
+
+  const maxBirthDate = this.getMaxBirthDate()
+  const content = `
+    <form id="add-player-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">Prénom</label>
+          <input type="text" id="first_name" name="first_name" required>
+        </div>
+        <div class="form-group">
+          <label for="last_name">Nom</label>
+          <input type="text" id="last_name" name="last_name" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="position">Position</label>
+          <select id="position" name="position" required>
+            <option value="">Sélectionner</option>
+            <option value="PG">Meneur (PG)</option>
+            <option value="SG">Arrière (SG)</option>
+            <option value="SF">Ailier (SF)</option>
+            <option value="PF">Ailier Fort (PF)</option>
+            <option value="C">Pivot (C)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="jersey_number">Numéro</label>
+          <input type="number" id="jersey_number" name="jersey_number" min="1" max="99" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="height">Taille (m)</label>
+          <input type="number" id="height" name="height" step="0.01" min="1.5" max="2.5" required>
+        </div>
+        <div class="form-group">
+          <label for="weight">Poids (kg)</label>
+          <input type="number" id="weight" name="weight" step="0.1" min="50" max="200" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="birth_date">Date de naissance</label>
+          <input type="date" id="birth_date" name="birth_date" max="${maxBirthDate}" required>
+          <small class="form-help">Le joueur doit avoir au moins 18 ans</small>
+         
+        </div>
+        <div class="form-group">
+          <label for="role">Rôle</label>
+          <select id="role" name="role" required>
+            <option value="player">Joueur</option>
+            <option value="captain">Capitaine</option>
+            <option value="vice_captain">Vice-Capitaine</option>
+            <option value="rookie">Rookie</option>
+            <option value="veteran">Vétéran</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="salary">Salaire annuel (Dhs)</label>
+        <input type="number" id="salary" name="salary" min="0" required>
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary">Ajouter le joueur</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      </div>
+    </form>
+  `
+
+  window.showModal("Ajouter un Joueur", content)
+
+  const calculateAge = (birthDate) => {
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  const showAgeAlert = (show) => {
+    const alert = document.getElementById("age-alert")
+    if (alert) {
+      alert.style.display = show ? "block" : "none"
+    }
+  }
+
+
+  document.getElementById("birth_date").addEventListener("change", (e) => {
+    if (e.target.value) {
+      const age = calculateAge(e.target.value)
+      
+      if (age < 18) {
+        showAgeAlert(true)
+        alert("Le joueur doit avoir au moins 18 ans")
+        e.target.value = ""
+        setTimeout(() => {
+          showAgeAlert(false)
+        }, 3000)
+      } else {
+        showAgeAlert(false)
+      }
+    }
+  })
+
+  document.getElementById("add-player-form").addEventListener("submit", async (e) => {
+    e.preventDefault()
+
+    const birthDateValue = document.getElementById("birth_date").value
+    if (birthDateValue) {
+      const age = calculateAge(birthDateValue)
+      
+      if (age < 18) {
+        alert("Le joueur doit avoir au moins 18 ans")
+        showAgeAlert(true)
+        return
+      }
     }
 
-    const content = `
-      <form id="add-player-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="first_name">Prénom</label>
-            <input type="text" id="first_name" name="first_name" required>
-          </div>
-          <div class="form-group">
-            <label for="last_name">Nom</label>
-            <input type="text" id="last_name" name="last_name" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="position">Position</label>
-            <select id="position" name="position" required>
-              <option value="">Sélectionner</option>
-              <option value="PG">Meneur (PG)</option>
-              <option value="SG">Arrière (SG)</option>
-              <option value="SF">Ailier (SF)</option>
-              <option value="PF">Ailier Fort (PF)</option>
-              <option value="C">Pivot (C)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="jersey_number">Numéro</label>
-            <input type="number" id="jersey_number" name="jersey_number" min="1" max="99" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="height">Taille (m)</label>
-            <input type="number" id="height" name="height" step="0.01" min="1.5" max="2.5" required>
-          </div>
-          <div class="form-group">
-            <label for="weight">Poids (kg)</label>
-            <input type="number" id="weight" name="weight" step="0.1" min="50" max="200" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="birth_date">Date de naissance</label>
-            <input type="date" id="birth_date" name="birth_date" required>
-          </div>
-          <div class="form-group">
-            <label for="role">Rôle</label>
-            <select id="role" name="role" required>
-              <option value="player">Joueur</option>
-              <option value="captain">Capitaine</option>
-              <option value="vice_captain">Vice-Capitaine</option>
-              <option value="rookie">Rookie</option>
-              <option value="veteran">Vétéran</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="salary">Salaire annuel (Dhs)</label>
-          <input type="number" id="salary" name="salary" min="0" required>
-        </div>
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary">Ajouter le joueur</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-        </div>
-      </form>
-    `
+    const formData = new FormData(e.target)
+    const data = Object.fromEntries(formData)
+    data.action = "create"
 
-    window.showModal("Ajouter un Joueur", content)
-
-    document.getElementById("add-player-form").addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const formData = new FormData(e.target)
-      const data = Object.fromEntries(formData)
-      data.action = "create"
-
-      try {
-        const result = await this.app.postData("../controllers/PlayerController.php", data)
-        if (result.success) {
-          window.closeModal()
-          this.loadPlayers()
-          this.refreshPlayerSelects() 
-          this.app.loadDashboard()
-          alert("Joueur ajouté avec succès!")
-        } else {
-          alert("Erreur lors de l'ajout du joueur")
-        }
-      } catch (error) {
-        console.error("Erreur lors de l'ajout du joueur:", error)
-        alert("Erreur lors de l'ajout du joueur")
+    try {
+      const result = await this.app.postData("../controllers/PlayerController.php", data)
+      if (result.success) {
+        window.closeModal()
+        this.loadPlayers()
+        this.refreshPlayerSelects() 
+        this.app.loadDashboard()
+        alert("Joueur ajouté avec succès!")
+      } else {
+        alert("Erreur lors de l'ajout du joueur: " + (result.error || "Erreur inconnue"))
       }
-    })
-  }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du joueur:", error)
+      alert("Erreur lors de l'ajout du joueur")
+    }
+  })
+}
 
   async editPlayer(id) {
     if (!this.app.hasPermission("players", "update_admin") && !this.app.hasPermission("players", "update_sports")) {
@@ -279,9 +330,41 @@ export class PlayerManager {
       }
 
       window.showModal("Modifier le Joueur", content)
-
+      const birthDateInput = document.getElementById("birth_date")
+      if (birthDateInput) {
+        birthDateInput.addEventListener("change", (e) => {
+          const birthDate = new Date(e.target.value)
+          const today = new Date()
+          let age = today.getFullYear() - birthDate.getFullYear()
+          const monthDiff = today.getMonth() - birthDate.getMonth()
+          
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+          }
+          
+          if (age < 18) {
+            alert("Le joueur doit avoir au moins 18 ans")
+            e.target.value = player.birth_date
+          }
+        })
+      }
       document.getElementById("edit-player-form").addEventListener("submit", async (e) => {
         e.preventDefault()
+             if (this.app.hasPermission("players", "update_admin")) {
+          const birthDate = new Date(document.getElementById("birth_date").value)
+          const today = new Date()
+          let age = today.getFullYear() - birthDate.getFullYear()
+          const monthDiff = today.getMonth() - birthDate.getMonth()
+          
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+          }
+          
+          if (age < 18) {
+            alert("Le joueur doit avoir au moins 18 ans")
+            return
+          }
+        }
         const formData = new FormData(e.target)
         const data = Object.fromEntries(formData)
         data.action = "update"

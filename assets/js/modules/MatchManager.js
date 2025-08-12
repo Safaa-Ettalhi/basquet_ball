@@ -12,80 +12,149 @@ export class MatchManager {
     }
   }
 
-displayMatches(matches) {
-  const tbody = document.querySelector("#matches-table tbody")
-  tbody.innerHTML = ""
+  displayMatches(matches) {
+    const tbody = document.querySelector("#matches-table tbody")
+    tbody.innerHTML = ""
 
-  matches.forEach((match) => {
-    const row = document.createElement("tr")
-    const matchDate = new Date(match.match_date).toLocaleDateString("fr-FR")
-    const score = match.status === "completed"
-      ? `${match.our_score} - ${match.opponent_score}`
-      : "-"
+    matches.forEach((match) => {
+      const row = document.createElement("tr")
+      const matchDate = new Date(match.match_date).toLocaleDateString("fr-FR")
+      const matchTime = new Date(match.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })
+      const score = match.status === "completed" && (match.home_score != 0 || match.away_score != 0)
+        ? `${match.home_score || match.our_score} - ${match.away_score || match.opponent_score}`
+        : "-"
 
-    let actionButtons = ""
+      const teamsDisplay = `${match.home_team_name || 'TBD'} vs ${match.away_team_name || match.opponent_name || 'TBD'}`
 
-    if (match.status === "scheduled" && this.app.hasPermission("matches", "update")) {
+      const hasScore = match.status === "completed" && (match.home_score != 0 || match.away_score != 0)
+      const matchDateTime = new Date(match.match_date)
+      const now = new Date()
+      const isMatchPast = matchDateTime <= now
+
+      let actionButtons = ""
+
+      
+      if (match.status === "completed" && !hasScore && this.app.hasPermission("matches", "update")) {
+        actionButtons += `
+          <button class="btn btn-success" onclick="updateMatchScore(${match.id})" title="Entrer le score">
+            <i data-lucide="trophy"></i>
+          </button>`
+      }
+
+      if (!hasScore && this.app.hasPermission("matches", "update")) {
+        actionButtons += `
+          <button class="btn btn-secondary" onclick="editMatch(${match.id})" title="Modifier le match">
+            <i data-lucide="edit"></i>
+          </button>`
+      }
+
+      if (hasScore) {
+        actionButtons += `
+          <span class="text-muted" title="Modification impossible - Score saisi">
+            <i data-lucide="lock"></i>
+          </span>`
+      } else if (match.status === "completed" && !hasScore) {
+        actionButtons += `
+          <span class="text-success" title="Prêt pour la saisie du score">
+            <i data-lucide="check-circle"></i>
+          </span>`
+      } else if (isMatchPast && match.status !== "completed") {
+        actionButtons += `
+          <span class="text-warning" title="Match terminé - Changer le statut à 'Terminé' pour saisir le score">
+            <i data-lucide="alert-circle"></i>
+          </span>`
+      } else if (!isMatchPast) {
+        actionButtons += `
+          <span class="text-info" title="Match à venir">
+            <i data-lucide="clock"></i>
+          </span>`
+      }
+
+      if (this.app.hasPermission("matches", "delete")) {
+        actionButtons += `
+          <button class="btn btn-danger" onclick="deleteMatch(${match.id})" title="Supprimer le match">
+            <i data-lucide="trash-2"></i>
+          </button>`
+      }
+
       actionButtons += `
-        <button class="btn btn-success" onclick="updateMatchScore(${match.id})" title="Entrer le score">
-          <i data-lucide="trophy"></i>
+        <button class="btn btn-info" onclick="viewMatchDetails(${match.id})" title="Voir les détails">
+          <i data-lucide="info"></i>
         </button>`
+
+      row.innerHTML = `
+        <td>${matchDate}<br><small class="text-muted">${matchTime}</small></td>
+        <td>${teamsDisplay}</td>
+        <td>${match.location}</td>
+        <td>${match.match_type}</td>
+        <td>${score}</td>
+        <td><span class="status-badge status-${match.status}">${match.status}</span></td>
+        <td class="action-buttons">
+          ${actionButtons}
+        </td>
+      `
+      tbody.appendChild(row)
+    })
+
+    lucide.createIcons()
+  }
+
+  getCurrentDateTime() {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  /**
+   * Vérifier la disponibilité d'une équipe pour un jour donné
+   */
+  async checkTeamDayAvailability(teamId, matchDate, excludeMatchId = null) {
+    try {
+      let url = `../controllers/MatchController.php?action=checkTeamDayAvailability&team_id=${teamId}&match_date=${encodeURIComponent(matchDate)}`
+      if (excludeMatchId) {
+        url += `&exclude_match_id=${excludeMatchId}`
+      }
+      
+      const result = await this.app.fetchData(url)
+      return result
+    } catch (error) {
+      console.error("Erreur lors de la vérification de disponibilité:", error)
+      return { available: true, conflict: null }
     }
-
-    if (this.app.hasPermission("matches", "update")) {
-      actionButtons += `
-        <button class="btn btn-secondary" onclick="editMatch(${match.id})" title="Modifier le match">
-          <i data-lucide="edit"></i>
-        </button>`
-    }
-
-    if (this.app.hasPermission("matches", "delete")) {
-      actionButtons += `
-        <button class="btn btn-danger" onclick="deleteMatch(${match.id})" title="Supprimer le match">
-          <i data-lucide="trash-2"></i>
-        </button>`
-    }
-
-    actionButtons += `
-      <button class="btn btn-info" onclick="viewMatchDetails(${match.id})" title="Voir les détails">
-        <i data-lucide="info"></i>
-      </button>`
-
-    row.innerHTML = `
-      <td>${matchDate}</td>
-      <td>${match.opponent_name || "TBD"}</td>
-      <td>${match.location}</td>
-      <td>${match.match_type}</td>
-      <td>${score}</td>
-      <td><span class="status-badge status-${match.status}">${match.status}</span></td>
-      <td class="action-buttons">
-        ${actionButtons}
-      </td>
-    `
-    tbody.appendChild(row)
-  })
-
-  // Recharge les icônes Lucide après DOM update
-  lucide.createIcons()
-}
+  }
 
   showAddMatchModal() {
     if (!this.app.hasPermission("matches", "create")) {
       alert("Vous n'avez pas les permissions pour créer un match")
       return
     }
-
+    const currentDateTime = this.getCurrentDateTime()
+  
     const content = `
       <form id="add-match-form">
         <div class="form-group">
           <label for="match_date">Date et heure</label>
-          <input type="datetime-local" id="match_date" name="match_date" required>
+          <input type="datetime-local" id="match_date" name="match_date" min="${currentDateTime}" required>
         </div>
-        <div class="form-group">
-          <label for="opponent_team_id">Équipe adverse</label>
-          <select id="opponent_team_id" name="opponent_team_id" required>
-            <option value="">Sélectionner</option>
-          </select>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="home_team_id">Équipe à domicile</label>
+            <select id="home_team_id" name="home_team_id" required>
+              <option value="">Sélectionner l'équipe à domicile</option>
+            </select>
+            <small id="home_team_warning" class="form-help text-warning" style="display: none;"></small>
+          </div>
+          <div class="form-group">
+            <label for="away_team_id">Équipe visiteur</label>
+            <select id="away_team_id" name="away_team_id" required>
+              <option value="">Sélectionner l'équipe visiteur</option>
+            </select>
+            <small id="away_team_warning" class="form-help text-warning" style="display: none;"></small>
+          </div>
         </div>
         <div class="form-group">
           <label for="location">Lieu</label>
@@ -108,15 +177,88 @@ displayMatches(matches) {
 
     window.showModal("Programmer un Match", content)
 
+    document.getElementById("match_date").addEventListener("change", (e) => {
+      const selectedDateTime = new Date(e.target.value)
+      const now = new Date()
+      
+      if (selectedDateTime <= now) {
+        alert("Le match ne peut pas être programmé dans le passé")
+        e.target.value = currentDateTime
+        return
+      }
+
+      checkTeamConflictsOnDateChange()
+    })
+
+    const checkTeamConflictsOnDateChange = async () => {
+      const matchDate = document.getElementById("match_date").value
+      const homeTeamId = document.getElementById("home_team_id").value
+      const awayTeamId = document.getElementById("away_team_id").value
+      
+      if (matchDate && homeTeamId) {
+        const homeAvailability = await this.checkTeamDayAvailability(homeTeamId, matchDate)
+        const homeWarning = document.getElementById("home_team_warning")
+        if (!homeAvailability.available) {
+          const conflictDate = new Date(homeAvailability.conflict.match_date).toLocaleDateString("fr-FR")
+          const conflictTime = new Date(homeAvailability.conflict.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })
+          homeWarning.textContent = `⚠️ Cette équipe a déjà un match le ${conflictDate} à ${conflictTime}`
+          homeWarning.style.display = "block"
+        } else {
+          homeWarning.style.display = "none"
+        }
+      }
+      
+      if (matchDate && awayTeamId) {
+        const awayAvailability = await this.checkTeamDayAvailability(awayTeamId, matchDate)
+        const awayWarning = document.getElementById("away_team_warning")
+        if (!awayAvailability.available) {
+          const conflictDate = new Date(awayAvailability.conflict.match_date).toLocaleDateString("fr-FR")
+          const conflictTime = new Date(awayAvailability.conflict.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })
+          awayWarning.textContent = `⚠️ Cette équipe a déjà un match le ${conflictDate} à ${conflictTime}`
+          awayWarning.style.display = "block"
+        } else {
+          awayWarning.style.display = "none"
+        }
+      }
+    }
+
+    const validateTeams = () => {
+      const homeTeam = document.getElementById("home_team_id").value
+      const awayTeam = document.getElementById("away_team_id").value
+      
+      if (homeTeam && awayTeam && homeTeam === awayTeam) {
+        alert("Les deux équipes doivent être différentes")
+        document.getElementById("away_team_id").value = ""
+        return false
+      }
+      return true
+    }
+
     this.app
       .fetchData("../controllers/TeamController.php?action=getAll")
       .then((teams) => {
-        const select = document.getElementById("opponent_team_id")
+        const homeSelect = document.getElementById("home_team_id")
+        const awaySelect = document.getElementById("away_team_id")
+        
         teams.forEach((team) => {
-          const option = document.createElement("option")
-          option.value = team.id
-          option.textContent = `${team.name} (${team.city})`
-          select.appendChild(option)
+          const homeOption = document.createElement("option")
+          homeOption.value = team.id
+          homeOption.textContent = `${team.name} (${team.city})`
+          homeSelect.appendChild(homeOption)
+          
+          const awayOption = document.createElement("option")
+          awayOption.value = team.id
+          awayOption.textContent = `${team.name} (${team.city})`
+          awaySelect.appendChild(awayOption)
+        })
+
+        homeSelect.addEventListener("change", () => {
+          validateTeams()
+          checkTeamConflictsOnDateChange()
+        })
+        awaySelect.addEventListener("change", () => {
+          validateTeams()
+          checkTeamConflictsOnDateChange()
         })
       })
       .catch((error) => {
@@ -125,6 +267,19 @@ displayMatches(matches) {
 
     document.getElementById("add-match-form").addEventListener("submit", async (e) => {
       e.preventDefault()
+
+      const matchDateTime = new Date(document.getElementById("match_date").value)
+      const now = new Date()
+      
+      if (matchDateTime <= now) {
+        alert("Le match ne peut pas être programmé dans le passé")
+        return
+      }
+
+      if (!validateTeams()) {
+        return
+      }
+      
       const formData = new FormData(e.target)
       const data = Object.fromEntries(formData)
       data.action = "create"
@@ -136,9 +291,12 @@ displayMatches(matches) {
           this.loadMatches()
           this.app.loadDashboard()
           alert("Match programmé avec succès!")
+        } else {
+          alert("Erreur lors de la programmation: " + (result.error || "Erreur inconnue"))
         }
       } catch (error) {
         console.error("Erreur lors de la programmation du match:", error)
+        alert("Erreur lors de la programmation du match")
       }
     })
   }
@@ -151,17 +309,41 @@ displayMatches(matches) {
 
     try {
       const match = await this.app.fetchData(`../controllers/MatchController.php?action=getOne&id=${id}`)
+      
+      const hasScore = match.status === "completed" && (match.home_score != 0 || match.away_score != 0)
+      
+      if (hasScore) {
+        alert("Impossible de modifier ce match car le score a déjà été saisi")
+        return
+      }
+
+      const matchDateTime = new Date(match.match_date)
+      const now = new Date()
+      const isMatchPast = matchDateTime <= now
+      
       const content = `
         <form id="edit-match-form">
           <div class="form-group">
             <label for="match_date">Date et heure</label>
-            <input type="datetime-local" id="match_date" name="match_date" value="${match.match_date.replace(" ", "T")}" required>
+            <input type="datetime-local" id="match_date" name="match_date" 
+                   value="${match.match_date.replace(" ", "T")}">
+            <small class="form-help">Choisissez une date future</small>
           </div>
-          <div class="form-group">
-            <label for="opponent_team_id">Équipe adverse</label>
-            <select id="opponent_team_id" name="opponent_team_id" required>
-              <option value="">Sélectionner</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="home_team_id">Équipe à domicile</label>
+              <select id="home_team_id" name="home_team_id" required>
+                <option value="">Sélectionner l'équipe à domicile</option>
+              </select>
+              <small id="home_team_warning" class="form-help text-warning" style="display: none;"></small>
+            </div>
+            <div class="form-group">
+              <label for="away_team_id">Équipe visiteur</label>
+              <select id="away_team_id" name="away_team_id" required>
+                <option value="">Sélectionner l'équipe visiteur</option>
+              </select>
+              <small id="away_team_warning" class="form-help text-warning" style="display: none;"></small>
+            </div>
           </div>
           <div class="form-group">
             <label for="location">Lieu</label>
@@ -179,9 +361,11 @@ displayMatches(matches) {
             <select id="status" name="status" required>
               <option value="scheduled" ${match.status === "scheduled" ? "selected" : ""}>Programmé</option>
               <option value="in_progress" ${match.status === "in_progress" ? "selected" : ""}>En cours</option>
-              <option value="completed" ${match.status === "completed" ? "selected" : ""}>Terminé</option>
+              <option value="completed" ${match.status === "completed" ? "selected" : ""} ${!isMatchPast ? "disabled" : ""}>Terminé${!isMatchPast ? " (date non passée)" : ""}</option>
               <option value="cancelled" ${match.status === "cancelled" ? "selected" : ""}>Annulé</option>
             </select>
+            ${!isMatchPast ? '<small class="form-help text-warning">Le statut "Terminé" n\'est disponible qu\'après la date du match</small>' : ''}
+            ${isMatchPast && match.status !== "completed" ? '<small class="form-help text-info">Changez le statut à "Terminé" pour pouvoir saisir le score</small>' : ''}
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-primary">Modifier le match</button>
@@ -192,21 +376,111 @@ displayMatches(matches) {
 
       window.showModal("Modifier le Match", content)
 
-      this.app.fetchData("../controllers/TeamController.php?action=getAll").then((teams) => {
-        const select = document.getElementById("opponent_team_id")
-        teams.forEach((team) => {
-          const option = document.createElement("option")
-          option.value = team.id
-          option.textContent = `${team.name} (${team.city})`
-          if (team.id == match.opponent_team_id) {
-            option.selected = true
+      const checkTeamConflictsOnDateChange = async () => {
+        const matchDate = document.getElementById("match_date").value
+        const homeTeamId = document.getElementById("home_team_id").value
+        const awayTeamId = document.getElementById("away_team_id").value
+        
+        if (matchDate && homeTeamId) {
+          const homeAvailability = await this.checkTeamDayAvailability(homeTeamId, matchDate, id)
+          const homeWarning = document.getElementById("home_team_warning")
+          if (!homeAvailability.available) {
+            const conflictDate = new Date(homeAvailability.conflict.match_date).toLocaleDateString("fr-FR")
+            const conflictTime = new Date(homeAvailability.conflict.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })
+            homeWarning.textContent = `⚠️ Cette équipe a déjà un match le ${conflictDate} à ${conflictTime}`
+            homeWarning.style.display = "block"
+          } else {
+            homeWarning.style.display = "none"
           }
-          select.appendChild(option)
+        }
+        
+        if (matchDate && awayTeamId) {
+          const awayAvailability = await this.checkTeamDayAvailability(awayTeamId, matchDate, id)
+          const awayWarning = document.getElementById("away_team_warning")
+          if (!awayAvailability.available) {
+            const conflictDate = new Date(awayAvailability.conflict.match_date).toLocaleDateString("fr-FR")
+            const conflictTime = new Date(awayAvailability.conflict.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })
+            awayWarning.textContent = `⚠️ Cette équipe a déjà un match le ${conflictDate} à ${conflictTime}`
+            awayWarning.style.display = "block"
+          } else {
+            awayWarning.style.display = "none"
+          }
+        }
+      }
+
+      document.getElementById("match_date").addEventListener("change", (e) => {
+        if (e.target.value) {
+          const selectedDateTime = new Date(e.target.value)
+          const now = new Date()
+          const statusSelect = document.getElementById("status")
+          const completedOption = statusSelect.querySelector('option[value="completed"]')
+          
+          if (selectedDateTime <= now) {
+            completedOption.disabled = false
+            completedOption.textContent = "Terminé"
+          } else {
+            completedOption.disabled = true
+            completedOption.textContent = "Terminé (date non passée)"
+            if (statusSelect.value === "completed") {
+              statusSelect.value = "scheduled"
+            }
+          }
+
+          checkTeamConflictsOnDateChange()
+        }
+      })
+      const validateTeams = () => {
+        const homeTeam = document.getElementById("home_team_id").value
+        const awayTeam = document.getElementById("away_team_id").value
+        
+        if (homeTeam && awayTeam && homeTeam === awayTeam) {
+          alert("Les deux équipes doivent être différentes")
+          return false
+        }
+        return true
+      }
+
+      this.app.fetchData("../controllers/TeamController.php?action=getAll").then((teams) => {
+        const homeSelect = document.getElementById("home_team_id")
+        const awaySelect = document.getElementById("away_team_id")
+        
+        teams.forEach((team) => {
+          const homeOption = document.createElement("option")
+          homeOption.value = team.id
+          homeOption.textContent = `${team.name} (${team.city})`
+          if (team.id == (match.home_team_id || match.opponent_team_id)) {
+            homeOption.selected = true
+          }
+          homeSelect.appendChild(homeOption)
+
+          const awayOption = document.createElement("option")
+          awayOption.value = team.id
+          awayOption.textContent = `${team.name} (${team.city})`
+          if (team.id == (match.away_team_id || match.opponent_team_id)) {
+            awayOption.selected = true
+          }
+          awaySelect.appendChild(awayOption)
         })
+
+        homeSelect.addEventListener("change", () => {
+          validateTeams()
+          checkTeamConflictsOnDateChange()
+        })
+        awaySelect.addEventListener("change", () => {
+          validateTeams()
+          checkTeamConflictsOnDateChange()
+        })
+        
+        checkTeamConflictsOnDateChange()
       })
 
       document.getElementById("edit-match-form").addEventListener("submit", async (e) => {
         e.preventDefault()
+
+        if (!validateTeams()) {
+          return
+        }
+
         const formData = new FormData(e.target)
         const data = Object.fromEntries(formData)
         data.action = "update"
@@ -218,9 +492,12 @@ displayMatches(matches) {
             window.closeModal()
             this.loadMatches()
             alert("Match modifié avec succès!")
+          } else {
+            alert("Erreur lors de la modification: " + (result.error || "Erreur inconnue"))
           }
         } catch (error) {
           console.error("Erreur lors de la modification du match:", error)
+          alert("Erreur lors de la modification du match")
         }
       })
     } catch (error) {
@@ -257,63 +534,93 @@ displayMatches(matches) {
       return
     }
 
-    const content = `
-      <form id="update-score-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="our_score">Notre score</label>
-            <input type="number" id="our_score" name="our_score" min="0" required>
-          </div>
-          <div class="form-group">
-            <label for="opponent_score">Score adversaire</label>
-            <input type="number" id="opponent_score" name="opponent_score" min="0" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary">Mettre à jour le score</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-        </div>
-      </form>
-    `
+    try {
+      const match = await this.app.fetchData(`../controllers/MatchController.php?action=getOne&id=${matchId}`)
 
-    window.showModal("Mettre à jour le Score", content)
-
-    document.getElementById("update-score-form").addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const formData = new FormData(e.target)
-      const data = Object.fromEntries(formData)
-      data.action = "updateScore"
-      data.id = matchId
-
-      try {
-        const result = await this.app.postData("../controllers/MatchController.php", data)
-        if (result.success) {
-          window.closeModal()
-          this.loadMatches()
-          this.app.loadDashboard()
-          alert("Score mis à jour avec succès!")
-        }
-      } catch (error) {
-        console.error("Erreur lors de la mise à jour du score:", error)
+      if (match.status !== "completed") {
+        alert("Impossible d'ajouter le score : le match doit d'abord être marqué comme 'Terminé'")
+        return
       }
-    })
+
+      if ((match.home_score != 0 || match.away_score != 0)) {
+        alert("Le score a déjà été saisi pour ce match")
+        return
+      }
+      
+      const content = `
+        <form id="update-score-form">
+          <h4>Saisie du score :</h4>
+          <div class="match-info" style="margin-bottom: 1rem; padding: 1rem; background: #252545;color: white; border-radius: 0.5rem;">
+            <h5>${match.home_team_name || 'Équipe 1'} vs ${match.away_team_name || match.opponent_name || 'Équipe 2'}</h5>
+            <p><strong>Date:</strong> ${new Date(match.match_date).toLocaleDateString("fr-FR")}</p>
+            <p><strong>Heure:</strong> ${new Date(match.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}</p>
+            <p><strong>Lieu:</strong> ${match.location}</p>
+            <p><strong>Statut:</strong> <span class="text-success">Terminé</span></p>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="home_score">${match.home_team_name || 'Équipe à domicile'}</label>
+              <input type="number" id="home_score" name="home_score" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="away_score">${match.away_team_name || match.opponent_name || 'Équipe visiteur'}</label>
+              <input type="number" id="away_score" name="away_score" min="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary">Enregistrer le score</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          </div>
+        </form>
+      `
+
+      window.showModal("Saisir le Score", content)
+
+      document.getElementById("update-score-form").addEventListener("submit", async (e) => {
+        e.preventDefault()
+        const formData = new FormData(e.target)
+        const data = Object.fromEntries(formData)
+        data.action = "updateScore"
+        data.id = matchId
+
+        try {
+          const result = await this.app.postData("../controllers/MatchController.php", data)
+          if (result.success) {
+            window.closeModal()
+            this.loadMatches()
+            this.app.loadDashboard()
+            alert("Score enregistré avec succès!")
+          } else {
+            alert("Erreur: " + (result.error || "Erreur inconnue"))
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'enregistrement du score:", error)
+          alert("Erreur lors de l'enregistrement du score")
+        }
+      })
+    } catch (error) {
+      console.error("Erreur lors du chargement du match:", error)
+    }
   }
 
   async viewMatchDetails(matchId) {
     try {
       const stats = await this.app.fetchData(
-        `../controllers/StatisticsController.php?action=getMatchStats&match_id=${matchId}`,
+        `../controllers/StatisticsController.php?action=getMatchStats&match_id=${matchId}`
       )
-      const match = await this.app.fetchData(`../controllers/MatchController.php?action=getOne&id=${matchId}`)
+      const match = await this.app.fetchData(
+        `../controllers/MatchController.php?action=getOne&id=${matchId}`
+      )
 
       let statsHtml = `
         <div class="match-details">
           <h4>Détails du match</h4>
           <div class="match-info">
-            <p><strong>Adversaire:</strong> ${match.opponent_name}</p>
+            <p><strong>Équipes:</strong> ${match.home_team_name || 'Équipe 1'} vs ${match.away_team_name || match.opponent_name || 'Équipe 2'}</p>
             <p><strong>Date:</strong> ${new Date(match.match_date).toLocaleDateString("fr-FR")}</p>
+            <p><strong>Heure:</strong> ${new Date(match.match_date).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Lieu:</strong> ${match.location}</p>
-            <p><strong>Score:</strong> ${match.our_score} - ${match.opponent_score}</p>
+            <p><strong>Score:</strong> ${match.status === 'completed' && (match.home_score != 0 || match.away_score != 0) ? `${match.home_score || match.our_score} - ${match.away_score || match.opponent_score}` : 'Match non joué'}</p>
           </div>
         </div>
       `

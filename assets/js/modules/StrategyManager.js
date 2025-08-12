@@ -12,65 +12,71 @@ export class StrategyManager {
     }
   }
 
-displayStrategiesTable(strategies) {
-  const tbody = document.querySelector("#strategies-table tbody")
-  if (!tbody) return
+  displayStrategiesTable(strategies) {
+    const tbody = document.querySelector("#strategies-table tbody")
+    if (!tbody) return
 
-  tbody.innerHTML = ""
+    tbody.innerHTML = ""
 
-  strategies.forEach((strategy) => {
-    const row = document.createElement("tr")
-    const matchDate = strategy.match_date
-      ? new Date(strategy.match_date).toLocaleDateString("fr-FR")
-      : "N/A"
+    strategies.forEach((strategy) => {
+      const row = document.createElement("tr")
+      const matchDate = strategy.match_date
+        ? new Date(strategy.match_date).toLocaleDateString("fr-FR")
+        : "N/A"
 
-    let actionButtons = ""
+      let teamsDisplay = "Match non défini"
+      if (strategy.home_team_name && strategy.away_team_name) {
+        teamsDisplay = `${strategy.home_team_name} vs ${strategy.away_team_name}`
+      } else if (strategy.opponent_name) {
+        teamsDisplay = `vs ${strategy.opponent_name}`
+      }
 
-    if (
-      this.app.hasPermission("strategies", "validate") &&
-      strategy.status === "pending"
-    ) {
-      actionButtons += `
-        <button class="btn btn-success" onclick="validateStrategy(${strategy.id}, 'approved')" title="Approuver">
-          <i data-lucide="check-circle"></i>
-        </button>
-        <button class="btn btn-danger" onclick="validateStrategy(${strategy.id}, 'rejected')" title="Rejeter">
-          <i data-lucide="x-circle"></i>
-        </button>
+      let actionButtons = ""
+
+      if (
+        this.app.hasPermission("strategies", "validate") &&
+        strategy.status === "pending"
+      ) {
+        actionButtons += `
+          <button class="btn btn-success" onclick="validateStrategy(${strategy.id}, 'approved')" title="Approuver">
+            <i data-lucide="check-circle"></i>
+          </button>
+          <button class="btn btn-danger" onclick="validateStrategy(${strategy.id}, 'rejected')" title="Rejeter">
+            <i data-lucide="x-circle"></i>
+          </button>
+        `
+      }
+
+      if (this.app.hasPermission("strategies", "update")) {
+        actionButtons += `
+          <button class="btn btn-secondary" onclick="editStrategy(${strategy.id})" title="Modifier">
+            <i data-lucide="edit"></i>
+          </button>`
+      }
+
+      if (this.app.hasPermission("strategies", "delete")) {
+        actionButtons += `
+          <button class="btn btn-danger" onclick="deleteStrategy(${strategy.id})" title="Supprimer">
+            <i data-lucide="trash-2"></i>
+          </button>`
+      }
+
+      row.innerHTML = `
+        <td>${teamsDisplay} - ${matchDate}</td>
+        <td>${strategy.strategy_name}</td>
+        <td>${strategy.proposed_by_name}</td>
+        <td><span class="status-badge status-${strategy.status}">${strategy.status}</span></td>
+        <td>${strategy.comments || ""}</td>
+        <td class="action-buttons">
+          ${actionButtons}
+        </td>
       `
-    }
 
-    if (this.app.hasPermission("strategies", "update")) {
-      actionButtons += `
-        <button class="btn btn-secondary" onclick="editStrategy(${strategy.id})" title="Modifier">
-          <i data-lucide="edit"></i>
-        </button>`
-    }
+      tbody.appendChild(row)
+    })
 
-    if (this.app.hasPermission("strategies", "delete")) {
-      actionButtons += `
-        <button class="btn btn-danger" onclick="deleteStrategy(${strategy.id})" title="Supprimer">
-          <i data-lucide="trash-2"></i>
-        </button>`
-    }
-
-    row.innerHTML = `
-      <td>${strategy.opponent_name || "N/A"} - ${matchDate}</td>
-      <td>${strategy.strategy_name}</td>
-      <td>${strategy.proposed_by_name}</td>
-      <td><span class="status-badge status-${strategy.status}">${strategy.status}</span></td>
-      <td>${strategy.comments || ""}</td>
-      <td class="action-buttons">
-        ${actionButtons}
-      </td>
-    `
-
-    tbody.appendChild(row)
-  })
-
-  lucide.createIcons()
-}
-
+    lucide.createIcons()
+  }
 
   showProposeStrategyModal() {
     if (!this.app.hasPermission("strategies", "create")) {
@@ -85,6 +91,7 @@ displayStrategiesTable(strategies) {
           <select id="match_id" name="match_id" required>
             <option value="">Sélectionner un match</option>
           </select>
+          <small class="form-help">Seuls les matchs futurs sans score sont affichés</small>
         </div>
         <div class="form-group">
           <label for="strategy_name">Nom de la stratégie</label>
@@ -103,16 +110,48 @@ displayStrategiesTable(strategies) {
 
     window.showModal("📋 Proposer une Stratégie", content)
 
-    
-    this.app.fetchData("../controllers/MatchController.php?action=getAll").then((matches) => {
+    this.app.fetchData("../controllers/StrategyController.php?action=getAvailableMatches").then((matches) => {
       const select = document.getElementById("match_id")
-      const upcomingMatches = matches.filter((match) => match.status === "scheduled")
-      upcomingMatches.forEach((match) => {
+      
+      if (matches.length === 0) {
+        const option = document.createElement("option")
+        option.value = ""
+        option.textContent = "Aucun match disponible"
+        option.disabled = true
+        select.appendChild(option)
+        return
+      }
+
+      matches.forEach((match) => {
         const option = document.createElement("option")
         option.value = match.id
-        option.textContent = `${match.opponent_name} - ${new Date(match.match_date).toLocaleDateString()}`
+
+        let teamsDisplay = ""
+        if (match.home_team_name && match.away_team_name) {
+          teamsDisplay = `${match.home_team_name} vs ${match.away_team_name}`
+        } else if (match.opponent_name) {
+          teamsDisplay = `vs ${match.opponent_name}`
+        } else {
+          teamsDisplay = "Match TBD"
+        }
+        
+        const matchDate = new Date(match.match_date).toLocaleDateString("fr-FR")
+        const matchTime = new Date(match.match_date).toLocaleTimeString("fr-FR", { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+        
+        option.textContent = `${teamsDisplay} - ${matchDate} à ${matchTime}`
         select.appendChild(option)
       })
+    }).catch((error) => {
+      console.error("Erreur lors du chargement des matchs:", error)
+      const select = document.getElementById("match_id")
+      const option = document.createElement("option")
+      option.value = ""
+      option.textContent = "Erreur lors du chargement des matchs"
+      option.disabled = true
+      select.appendChild(option)
     })
 
     document.getElementById("propose-strategy-form").addEventListener("submit", async (e) => {
@@ -128,9 +167,12 @@ displayStrategiesTable(strategies) {
           window.closeModal()
           this.loadStrategies()
           alert("Stratégie proposée avec succès!")
+        } else {
+          alert("Erreur lors de la proposition de stratégie")
         }
       } catch (error) {
         console.error("Erreur lors de la proposition de stratégie:", error)
+        alert("Erreur lors de la proposition de stratégie")
       }
     })
   }
@@ -168,6 +210,12 @@ displayStrategiesTable(strategies) {
     try {
       const strategies = await this.app.fetchData("../controllers/StrategyController.php?action=getAll")
       const strategy = strategies.find((s) => s.id == id)
+      
+      if (!strategy) {
+        alert("Stratégie non trouvée")
+        return
+      }
+      
       const content = `
         <form id="edit-strategy-form">
           <div class="form-group">
@@ -176,7 +224,7 @@ displayStrategiesTable(strategies) {
           </div>
           <div class="form-group">
             <label for="comments">Description/Commentaires</label>
-            <textarea id="comments" name="comments" rows="4" required>${strategy.comments}</textarea>
+            <textarea id="comments" name="comments" rows="4" required>${strategy.comments || ''}</textarea>
           </div>
           <div class="form-group">
             <button type="submit" class="btn btn-primary">Modifier la Stratégie</button>

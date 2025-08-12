@@ -64,70 +64,149 @@ displayBudgetItems(items) {
     tbody.appendChild(row)
   })
 
-  // Recharge les icônes Lucide après modification du DOM
   lucide.createIcons()
 }
+  //  YYYY-MM-DD
+  getTodayDate() {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
 
+showAddBudgetModal() {
+  if (!this.app.hasPermission("budget", "create")) {
+    alert("Vous n'avez pas les permissions pour ajouter une transaction")
+    return
+  }
 
-  showAddBudgetModal() {
-    if (!this.app.hasPermission("budget", "create")) {
-      alert("Vous n'avez pas les permissions pour ajouter une transaction")
-      return
+  const todayDate = this.getTodayDate()
+  const content = `
+    <form id="add-budget-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Catégorie</label>
+          <select id="category" name="category" required>
+            <option value="">Sélectionner</option>
+            <option value="salary">Salaire</option>
+            <option value="equipment">Équipement</option>
+            <option value="medical">Médical</option>
+            <option value="travel">Voyage</option>
+            <option value="facility">Installation</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="transaction_type">Type</label>
+          <select id="transaction_type" name="transaction_type" required>
+            <option value="">Sélectionner</option>
+            <option value="income">Revenu</option>
+            <option value="expense">Dépense</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <input type="text" id="description" name="description" required>
+      </div>
+      <div class="form-group">
+        <label for="amount">Montant (Dhs)</label>
+        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+      </div>
+      <!-- Date cachée, fixée à aujourd'hui -->
+      <input type="hidden" id="transaction_date" name="transaction_date" value="${todayDate}">
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary">Ajouter la transaction</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      </div>
+    </form>
+  `
+
+  window.showModal("Ajouter une Transaction", content)
+
+  document.getElementById("add-budget-form").addEventListener("submit", async (e) => {
+    e.preventDefault()
+    
+    const formData = new FormData(e.target)
+    const data = Object.fromEntries(formData)
+    data.action = "create"
+    data.created_by = this.app.currentUser.id
+    data.transaction_date = todayDate
+
+    try {
+      const result = await this.app.postData("../controllers/BudgetController.php", data)
+      if (result.success) {
+        window.closeModal()
+        this.loadBudget()
+        this.app.loadDashboard()
+        alert("Transaction ajoutée avec succès!")
+      } else {
+        alert("Erreur lors de l'ajout: " + (result.error || "Erreur inconnue"))
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de la transaction:", error)
+      alert("Erreur lors de l'ajout de la transaction")
     }
+  })
+}
 
+async editBudgetItem(id) {
+  if (!this.app.hasPermission("budget", "update")) {
+    alert("Vous n'avez pas les permissions pour modifier une transaction")
+    return
+  }
+
+  try {
+    const item = await this.app.fetchData(`../controllers/BudgetController.php?action=getOne&id=${id}`)
+    
     const content = `
-      <form id="add-budget-form">
+      <form id="edit-budget-form">
         <div class="form-row">
           <div class="form-group">
             <label for="category">Catégorie</label>
             <select id="category" name="category" required>
-              <option value="">Sélectionner</option>
-              <option value="salary">Salaire</option>
-              <option value="equipment">Équipement</option>
-              <option value="medical">Médical</option>
-              <option value="travel">Voyage</option>
-              <option value="facility">Installation</option>
-              <option value="other">Autre</option>
+              <option value="salary" ${item.category === "salary" ? "selected" : ""}>Salaire</option>
+              <option value="equipment" ${item.category === "equipment" ? "selected" : ""}>Équipement</option>
+              <option value="medical" ${item.category === "medical" ? "selected" : ""}>Médical</option>
+              <option value="travel" ${item.category === "travel" ? "selected" : ""}>Voyage</option>
+              <option value="facility" ${item.category === "facility" ? "selected" : ""}>Installation</option>
+              <option value="other" ${item.category === "other" ? "selected" : ""}>Autre</option>
             </select>
           </div>
           <div class="form-group">
             <label for="transaction_type">Type</label>
             <select id="transaction_type" name="transaction_type" required>
-              <option value="">Sélectionner</option>
-              <option value="income">Revenu</option>
-              <option value="expense">Dépense</option>
+              <option value="income" ${item.transaction_type === "income" ? "selected" : ""}>Revenu</option>
+              <option value="expense" ${item.transaction_type === "expense" ? "selected" : ""}>Dépense</option>
             </select>
           </div>
         </div>
         <div class="form-group">
           <label for="description">Description</label>
-          <input type="text" id="description" name="description" required>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="amount">Montant (Dhs)</label>
-            <input type="number" id="amount" name="amount" step="0.01" min="0" required>
-          </div>
-          <div class="form-group">
-            <label for="transaction_date">Date</label>
-            <input type="date" id="transaction_date" name="transaction_date" required>
-          </div>
+          <input type="text" id="description" name="description" value="${item.description}" required>
         </div>
         <div class="form-group">
-          <button type="submit" class="btn btn-primary">Ajouter la transaction</button>
+          <label for="amount">Montant (Dhs)</label>
+          <input type="number" id="amount" name="amount" value="${item.amount}" step="0.01" min="0" required>
+        </div>
+        <!-- Date non modifiable, gardée cachée -->
+        <input type="hidden" id="transaction_date" name="transaction_date" value="${item.transaction_date}">
+       
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary">Modifier la transaction</button>
           <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
         </div>
       </form>
     `
 
-    window.showModal("Ajouter une Transaction", content)
-
-    document.getElementById("add-budget-form").addEventListener("submit", async (e) => {
+    window.showModal("Modifier la Transaction", content)
+    
+    document.getElementById("edit-budget-form").addEventListener("submit", async (e) => {
       e.preventDefault()
+      
       const formData = new FormData(e.target)
       const data = Object.fromEntries(formData)
-      data.action = "create"
-      data.created_by = this.app.currentUser.id
+      data.action = "update"
+      data.id = id
+      data.transaction_date = item.transaction_date
 
       try {
         const result = await this.app.postData("../controllers/BudgetController.php", data)
@@ -135,90 +214,19 @@ displayBudgetItems(items) {
           window.closeModal()
           this.loadBudget()
           this.app.loadDashboard()
-          alert("Transaction ajoutée avec succès!")
+          alert("Transaction modifiée avec succès!")
+        } else {
+          alert("Erreur lors de la modification: " + (result.error || "Erreur inconnue"))
         }
       } catch (error) {
-        console.error("Erreur lors de l'ajout de la transaction:", error)
+        console.error("Erreur lors de la modification de la transaction:", error)
+        alert("Erreur lors de la modification de la transaction")
       }
     })
+  } catch (error) {
+    console.error("Erreur lors du chargement de la transaction:", error)
   }
-
-  async editBudgetItem(id) {
-    if (!this.app.hasPermission("budget", "update")) {
-      alert("Vous n'avez pas les permissions pour modifier une transaction")
-      return
-    }
-
-    try {
-      const item = await this.app.fetchData(`../controllers/BudgetController.php?action=getOne&id=${id}`)
-      const content = `
-        <form id="edit-budget-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="category">Catégorie</label>
-              <select id="category" name="category" required>
-                <option value="salary" ${item.category === "salary" ? "selected" : ""}>Salaire</option>
-                <option value="equipment" ${item.category === "equipment" ? "selected" : ""}>Équipement</option>
-                <option value="medical" ${item.category === "medical" ? "selected" : ""}>Médical</option>
-                <option value="travel" ${item.category === "travel" ? "selected" : ""}>Voyage</option>
-                <option value="facility" ${item.category === "facility" ? "selected" : ""}>Installation</option>
-                <option value="other" ${item.category === "other" ? "selected" : ""}>Autre</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="transaction_type">Type</label>
-              <select id="transaction_type" name="transaction_type" required>
-                <option value="income" ${item.transaction_type === "income" ? "selected" : ""}>Revenu</option>
-                <option value="expense" ${item.transaction_type === "expense" ? "selected" : ""}>Dépense</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="description">Description</label>
-            <input type="text" id="description" name="description" value="${item.description}" required>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="amount">Montant (Dhs)</label>
-              <input type="number" id="amount" name="amount" value="${item.amount}" step="0.01" min="0" required>
-            </div>
-            <div class="form-group">
-              <label for="transaction_date">Date</label>
-              <input type="date" id="transaction_date" name="transaction_date" value="${item.transaction_date}" required>
-            </div>
-          </div>
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary">Modifier la transaction</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-          </div>
-        </form>
-      `
-
-      window.showModal("Modifier la Transaction", content)
-
-      document.getElementById("edit-budget-form").addEventListener("submit", async (e) => {
-        e.preventDefault()
-        const formData = new FormData(e.target)
-        const data = Object.fromEntries(formData)
-        data.action = "update"
-        data.id = id
-
-        try {
-          const result = await this.app.postData("../controllers/BudgetController.php", data)
-          if (result.success) {
-            window.closeModal()
-            this.loadBudget()
-            this.app.loadDashboard()
-            alert("Transaction modifiée avec succès!")
-          }
-        } catch (error) {
-          console.error("Erreur lors de la modification de la transaction:", error)
-        }
-      })
-    } catch (error) {
-      console.error("Erreur lors du chargement de la transaction:", error)
-    }
-  }
+}
 
   async deleteBudgetItem(id) {
     if (!this.app.hasPermission("budget", "delete")) {

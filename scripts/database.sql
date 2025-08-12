@@ -166,3 +166,17 @@ CREATE TABLE training_participants (
   FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
   CHECK (performance_rating >= 1 AND performance_rating <= 10)
 );
+-- Migration pour supporter deux équipes dans les matchs
+USE basketball_management;
+
+-- Ajouter les nouvelles colonnes
+ALTER TABLE matches 
+ADD COLUMN home_team_id INT AFTER opponent_team_id,
+ADD COLUMN away_team_id INT AFTER home_team_id,
+ADD COLUMN home_score INT DEFAULT 0 AFTER our_score,
+ADD COLUMN away_score INT DEFAULT 0 AFTER home_score;
+
+-- Ajouter les clés étrangères
+ALTER TABLE matches 
+ADD FOREIGN KEY (home_team_id) REFERENCES teams(id),
+ADD FOREIGN KEY (away_team_id) REFERENCES teams(id);

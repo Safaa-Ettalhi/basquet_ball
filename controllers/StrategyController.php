@@ -11,14 +11,42 @@ class StrategyController {
     }
     
     public function getAllStrategies() {
-        $query = "SELECT sv.*, m.match_date, t.name as opponent_name,
+        $query = "SELECT sv.*, m.match_date, m.status as match_status,
+                         ht.name as home_team_name, ht.city as home_team_city,
+                         at.name as away_team_name, at.city as away_team_city,
+                         ot.name as opponent_name, ot.city as opponent_city,
                          u1.username as proposed_by_name, u2.username as validated_by_name
                   FROM strategy_validations sv
                   LEFT JOIN matches m ON sv.match_id = m.id
-                  LEFT JOIN teams t ON m.opponent_team_id = t.id
+                  LEFT JOIN teams ht ON m.home_team_id = ht.id
+                  LEFT JOIN teams at ON m.away_team_id = at.id
+                  LEFT JOIN teams ot ON m.opponent_team_id = ot.id
                   LEFT JOIN users u1 ON sv.proposed_by = u1.id
                   LEFT JOIN users u2 ON sv.validated_by = u2.id
                   ORDER BY sv.created_at DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+
+    public function getAvailableMatches() {
+        $query = "SELECT m.id, m.match_date, m.location, m.status,
+                         ht.name as home_team_name, ht.city as home_team_city,
+                         at.name as away_team_name, at.city as away_team_city,
+                         ot.name as opponent_name, ot.city as opponent_city
+                  FROM matches m
+                  LEFT JOIN teams ht ON m.home_team_id = ht.id
+                  LEFT JOIN teams at ON m.away_team_id = at.id
+                  LEFT JOIN teams ot ON m.opponent_team_id = ot.id
+                  WHERE m.match_date >= NOW()
+                  AND m.status != 'completed'
+                  AND m.status != 'cancelled'
+                  AND (m.home_score = 0 OR m.home_score IS NULL)
+                  AND (m.away_score = 0 OR m.away_score IS NULL)
+                  ORDER BY m.match_date ASC";
         
         $stmt = $this->db->prepare($query);
         $stmt->execute();
@@ -85,6 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         case 'getAll':
             header('Content-Type: application/json');
             echo json_encode($controller->getAllStrategies());
+            break;
+            
+        case 'getAvailableMatches':
+            header('Content-Type: application/json');
+            echo json_encode($controller->getAvailableMatches());
             break;
     }
 }

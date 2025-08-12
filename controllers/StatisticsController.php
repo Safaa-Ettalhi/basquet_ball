@@ -13,6 +13,47 @@ class StatisticsController {
         $this->statistics = new Statistics($this->db);
     }
     
+
+    private function validateShootingStats($data) {
+
+        if (isset($data['field_goals_made'], $data['field_goals_attempted'])) {
+            if ($data['field_goals_made'] > $data['field_goals_attempted']) {
+                throw new Exception("Les tirs de terrain réussis ne peuvent pas être supérieurs aux tirs tentés");
+            }
+        }
+
+        if (isset($data['three_points_made'], $data['three_points_attempted'])) {
+            if ($data['three_points_made'] > $data['three_points_attempted']) {
+                throw new Exception("Les tirs à 3 points réussis ne peuvent pas être supérieurs aux tirs tentés");
+            }
+        }
+
+        if (isset($data['free_throws_made'], $data['free_throws_attempted'])) {
+            if ($data['free_throws_made'] > $data['free_throws_attempted']) {
+                throw new Exception("Les lancers francs réussis ne peuvent pas être supérieurs aux lancers tentés");
+            }
+        }
+    }
+
+    private function validateStatsData($data) {
+        $required = ['player_id', 'match_id', 'points', 'rebounds', 'assists'];
+        
+        foreach ($required as $field) {
+            if (!isset($data[$field]) || $data[$field] === '') {
+                throw new Exception("Champ requis manquant: " . $field);
+            }
+        }
+
+        $numericFields = ['points', 'rebounds', 'assists', 'steals', 'blocks', 'turnovers', 'minutes_played'];
+        foreach ($numericFields as $field) {
+            if (isset($data[$field]) && (!is_numeric($data[$field]) || $data[$field] < 0)) {
+                throw new Exception("Le champ $field doit être un nombre positif");
+            }
+        }
+        
+        $this->validateShootingStats($data);
+    }
+    
     public function getAllStatistics($playerId = null, $matchId = null) {
         try {
             $query = "SELECT 
@@ -86,15 +127,8 @@ class StatisticsController {
     
     public function addPlayerMatchStats($data) {
         try {
+            $this->validateStatsData($data);
             
-            $required_fields = ['player_id', 'match_id', 'points', 'rebounds', 'assists'];
-            foreach ($required_fields as $field) {
-                if (!isset($data[$field]) || $data[$field] === '') {
-                    throw new Exception("Champ requis manquant: " . $field);
-                }
-            }
-            
-            // Vérifier que le joueur et le match existent
             $playerCheck = $this->db->prepare("SELECT id FROM players WHERE id = :player_id");
             $playerCheck->bindParam(':player_id', $data['player_id']);
             $playerCheck->execute();
@@ -109,7 +143,6 @@ class StatisticsController {
                 throw new Exception("Match introuvable");
             }
             
-            // Vérifier si des stats existent déjà pour ce joueur et ce match
             $existingCheck = $this->db->prepare("SELECT id FROM player_statistics WHERE player_id = :player_id AND match_id = :match_id");
             $existingCheck->bindParam(':player_id', $data['player_id']);
             $existingCheck->bindParam(':match_id', $data['match_id']);
@@ -120,14 +153,12 @@ class StatisticsController {
             
             return $this->statistics->addPlayerMatchStats($data);
         } catch (Exception $e) {
-            error_log("Erreur addPlayerMatchStats: " . $e->getMessage());
             throw $e;
         }
     }
     
     public function updatePlayerMatchStats($id, $data) {
         try {
-            // Vérifier que la statistique existe
             $checkQuery = "SELECT id FROM player_statistics WHERE id = :id";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':id', $id);
@@ -136,6 +167,8 @@ class StatisticsController {
             if (!$checkStmt->fetch()) {
                 throw new Exception("Statistique introuvable");
             }
+            
+            $this->validateShootingStats($data);
             
             $query = "UPDATE player_statistics 
                       SET points=:points, rebounds=:rebounds, assists=:assists,
@@ -150,8 +183,6 @@ class StatisticsController {
             
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id);
-            
-            // Définir les valeurs par défaut
             $defaults = [
                 'points' => 0, 'rebounds' => 0, 'assists' => 0, 'steals' => 0,
                 'blocks' => 0, 'turnovers' => 0, 'minutes_played' => 0,
@@ -175,14 +206,12 @@ class StatisticsController {
             return $result;
             
         } catch (Exception $e) {
-            error_log("Erreur updatePlayerMatchStats: " . $e->getMessage());
             throw $e;
         }
     }
     
     public function deletePlayerMatchStats($id) {
         try {
-            // Vérifier que la statistique existe
             $checkQuery = "SELECT id FROM player_statistics WHERE id = :id";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':id', $id);
@@ -199,7 +228,6 @@ class StatisticsController {
             return $stmt->execute();
             
         } catch (Exception $e) {
-            error_log("Erreur deletePlayerMatchStats: " . $e->getMessage());
             throw $e;
         }
     }
@@ -226,18 +254,12 @@ class StatisticsController {
     }
 }
 
-
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-
-
+// API endpoints
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// API endpoints
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         $controller = new StatisticsController();
@@ -289,10 +311,6 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller = new StatisticsController();
         $input = file_get_contents("php://input");
-        
-   
-        error_log("Données reçues: " . $input);
-        
         $data = json_decode($input, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
